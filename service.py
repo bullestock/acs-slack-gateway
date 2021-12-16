@@ -4,6 +4,8 @@ import os
 import requests
 import uuid
 
+global_status = None
+
 app = Flask(__name__)
 
 logger = logging.getLogger('werkzeug')
@@ -29,7 +31,16 @@ def is_acs_request_valid(request):
     return is_token_valid
 
 def get_acs_status():
-    return "TODO"
+    global global_status
+    logger.info("Stored status: %s" % global_status)
+    if not global_status:
+        return "No status"
+    status = ''
+    for key in global_status:
+        if len(status) > 0:
+            status = status + "\n"
+        status = status + "%s: %s" % (key.capitalize(), global_status[key])
+    return status
 
 @app.route("/slash/<command>", methods=["POST"])
 def command(command):
@@ -65,7 +76,9 @@ def status():
     if not is_acs_request_valid(request):
         logger.info("Invalid request. Aborting")
         return abort(403)
-    # TODO
+    global global_status
+    global_status = request.json['status']
+    logger.info("Storing status: %s" % global_status)
     return "", 200
 
 # Start the server on port 5000
