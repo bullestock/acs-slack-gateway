@@ -22,6 +22,14 @@ def is_slack_request_valid(request):
         return False
     return is_token_valid and is_team_id_valid    
 
+def is_action_allowed(request):
+    try:
+        username = request.form['user_name']
+        return username in os.environ['ACTION_USERS'].split(',')
+    except Exception as e:
+        logger.info("Exception: %s" % e)
+        return False
+
 def is_acs_request_valid(request):
     try:
         is_token_valid = request.json['token'] == os.environ['ACS_VERIFICATION_TOKEN']
@@ -49,12 +57,18 @@ def command(command):
         logger.info("Invalid request. Aborting")
         return abort(403)
     logger.info("Command received: %s" % command)
+    logger.info("Form: %s" % request.form)
     if command == 'status':
         return jsonify(
             response_type='in_channel',
             text=get_acs_status(),
         )
     if command == 'action':
+        if not is_action_allowed(request):
+            return jsonify(
+                response_type='in_channel',
+                text='You are not allowed to perform actions'
+            )
         return jsonify(
             response_type='in_channel',
             text='Actions not supported yet'
