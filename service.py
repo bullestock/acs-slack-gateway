@@ -76,7 +76,7 @@ def command(command):
             global_action = action
             return jsonify(
                 response_type='in_channel',
-                text="Action '%s' queued" % action            
+                text="Action '%s' queued" % action)
         else:
             return jsonify(
                 response_type='in_channel',
