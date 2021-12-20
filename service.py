@@ -5,6 +5,7 @@ import requests
 import uuid
 
 global_status = None
+global_action = None
 
 app = Flask(__name__)
 
@@ -69,20 +70,29 @@ def command(command):
                 response_type='in_channel',
                 text='You are not allowed to perform actions'
             )
-        return jsonify(
-            response_type='in_channel',
-            text='Actions not supported yet'
+        action = request.form['text']
+        if action == 'calibrate':
+            global global_action
+            global_action = action
+            return jsonify(
+                response_type='in_channel',
+                text="Action '%s' queued" % action            
+        else:
+            return jsonify(
+                response_type='in_channel',
+                text="Action '%s' not supported" % action
         )
-    return "Unknown command", 200
+    else:
+        return "Unknown command", 200
 
-@app.route("/acsquery/<command>", methods=["POST"])
-def query(command):
-    logger.info("acsquery: %s" % command)
+@app.route("/acsquery", methods=["POST"])
+def query():
+    logger.info("acsquery: %s" % request.json)
     if not is_acs_request_valid(request):
         logger.info("Invalid request. Aborting")
         return abort(403)
-    # TODO
-    return "", 200
+    global global_action
+    return jsonify(action=global_action)
 
 @app.route("/acsstatus", methods=["POST"])
 def status():
