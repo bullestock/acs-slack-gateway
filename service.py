@@ -92,7 +92,9 @@ def query():
         logger.info("Invalid request. Aborting")
         return abort(403)
     global global_action
-    return jsonify(action=global_action)
+    action = global_action
+    global_action = None
+    return jsonify(action=action)
 
 @app.route("/acsstatus", methods=["POST"])
 def status():
