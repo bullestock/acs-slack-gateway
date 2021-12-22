@@ -71,7 +71,7 @@ def command(command):
                 text='You are not allowed to perform actions'
             )
         action = request.form['text']
-        if action in ['calibrate', 'lock', 'unlock']
+        if action in ['calibrate', 'lock', 'unlock']:
             global global_action
             global_action = action
             return jsonify(
