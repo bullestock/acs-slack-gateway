@@ -14,6 +14,7 @@ handler = logging.FileHandler('acsgw.log')
 logger.addHandler(handler)
 app.logger.addHandler(handler)
 
+# Validate token/team from Slack slash command
 def is_slack_request_valid(request):
     try:
         is_token_valid = request.form['token'] == os.environ['SLACK_VERIFICATION_TOKEN']
@@ -23,14 +24,17 @@ def is_slack_request_valid(request):
         return False
     return is_token_valid and is_team_id_valid    
 
+# Validate user in /acsaction
 def is_action_allowed(request):
     try:
         username = request.form['user_name']
+        logger.info("Action user: %s" % username)
         return username in os.environ['ACTION_USERS'].split(',')
     except Exception as e:
         logger.info("Exception: %s" % e)
         return False
 
+# Validate token in /acsquery
 def is_acs_request_valid(request):
     try:
         is_token_valid = request.json['token'] == os.environ['ACS_VERIFICATION_TOKEN']
@@ -39,6 +43,7 @@ def is_acs_request_valid(request):
         return False
     return is_token_valid
 
+# Return ACS status set by most recent call to /acsstatus
 def get_acs_status():
     global global_status
     logger.info("Stored status: %s" % global_status)
@@ -51,20 +56,21 @@ def get_acs_status():
         status = status + "%s: %s" % (key.capitalize(), global_status[key])
     return status
 
+# Handle Slack slash command.
+# /acsaction will call /slash/action, etc.
 @app.route("/slash/<command>", methods=["POST"])
 def command(command):
-    logger.info("slash")
     if not is_slack_request_valid(request):
         logger.info("Invalid request. Aborting")
         return abort(403)
     logger.info("Command received: %s" % command)
-    logger.info("Form: %s" % request.form)
     if command == 'status':
         return jsonify(
             response_type='in_channel',
             text=get_acs_status(),
         )
     if command == 'action':
+        logger.info("Action : %s" % command)
         if not is_action_allowed(request):
             return jsonify(
                 response_type='in_channel',
@@ -85,6 +91,7 @@ def command(command):
     else:
         return "Unknown command", 200
 
+# /acsquery: Called by ACS to see if an action is pending
 @app.route("/acsquery", methods=["POST"])
 def query():
     logger.info("acsquery: %s" % request.json)
@@ -96,6 +103,7 @@ def query():
     global_action = None
     return jsonify(action=action)
 
+# /acsstatus: Called by ACS to set status
 @app.route("/acsstatus", methods=["POST"])
 def status():
     logger.info("acsstatus: %s" % request.json)
