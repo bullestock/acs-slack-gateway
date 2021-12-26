@@ -1,10 +1,12 @@
 from flask import Flask, request, abort, jsonify
+import datetime
 import logging
 import os
 import requests
 import uuid
 
-global_status = None
+global_acs_status = None
+global_camera_status = {}
 global_action = None
 
 app = Flask(__name__)
@@ -43,17 +45,39 @@ def is_acs_request_valid(request):
         return False
     return is_token_valid
 
+# Validate token in /camera
+def is_camera_request_valid(request):
+    try:
+        is_token_valid = request.headers.get('Authentication') == ("Bearer %s" % os.environ['CAMERA_VERIFICATION_TOKEN'])
+    except Exception as e:
+        logger.info("Exception: %s" % e)
+        return False
+    return is_token_valid
+
 # Return ACS status set by most recent call to /acsstatus
 def get_acs_status():
-    global global_status
-    logger.info("Stored status: %s" % global_status)
-    if not global_status:
+    global global_acs_status
+    logger.info("Stored status: %s" % global_acs_status)
+    if not global_acs_status:
         return "No status"
     status = ''
-    for key in global_status:
+    for key in global_acs_status:
         if len(status) > 0:
             status = status + "\n"
-        status = status + "%s: %s" % (key.capitalize(), global_status[key])
+        status = status + "%s: %s" % (key.capitalize(), global_acs_status[key])
+    return status
+
+# Return camera status set by most recent call to /camstatus
+def get_camera_status():
+    global global_camera_status
+    logger.info("Stored status: %s" % global_camera_status)
+    if not global_camera_status:
+        return "No status"
+    status = ''
+    for key in global_camera_status:
+        if len(status) > 0:
+            status = status + "\n"
+        status = status + "%s: %s" % (key, global_camera_status[key])
     return status
 
 # Handle Slack slash command.
@@ -61,15 +85,20 @@ def get_acs_status():
 @app.route("/slash/<command>", methods=["POST"])
 def command(command):
     if not is_slack_request_valid(request):
-        logger.info("Invalid request. Aborting")
+        logger.info("Invalid Slack request. Aborting")
         return abort(403)
     logger.info("Command received: %s" % command)
-    if command == 'status':
+    if command == 'status' or command == 'acsstatus':
         return jsonify(
             response_type='in_channel',
             text=get_acs_status(),
         )
-    if command == 'action':
+    elif command == 'camstatus':
+        return jsonify(
+            response_type='in_channel',
+            text=get_camera_status(),
+        )
+    elif command == 'action':
         logger.info("Action : %s" % command)
         if not is_action_allowed(request):
             return jsonify(
@@ -110,10 +139,31 @@ def status():
     if not is_acs_request_valid(request):
         logger.info("Invalid request. Aborting")
         return abort(403)
-    global global_status
-    global_status = request.json['status']
-    logger.info("Storing status: %s" % global_status)
+    global global_acs_status
+    global_acs_status = request.json['status']
+    logger.info("Storing status: %s" % global_acs_status)
     return "", 200
+
+# Get camera parameters
+@app.route("/camera/<instance>", methods=["GET"])
+def get_camera(instance):
+    if not is_camera_request_valid(request):
+        logger.info("Invalid camera request. Aborting")
+        return abort(403)
+    if not instance.isdigit():
+        logger.info("Invalid camera instance. Aborting")
+        return abort(400)
+    instance = int(instance)
+    logger.info("Camera %d parameter query" % instance)
+    global global_camera_status
+    global_camera_status[instance] = datetime.datetime.now()
+    keepalive = int(os.environ['CAMERA_DEFAULT_KEEPALIVE'])
+    pixel_threshold = int(os.environ['CAMERA_DEFAULT_PIXEL_THRESHOLD'])
+    percent_threshold = int(os.environ['CAMERA_DEFAULT_PERCENT_THRESHOLD'])
+    logger.info("Camera defaults: %d, %d, %d" % (keepalive, pixel_threshold, percent_threshold))
+    return jsonify(keepalive=keepalive,
+                   pixel_threshold=pixel_threshold,
+                   percent_threshold=percent_threshold)
 
 # Start the server on port 5000
 if __name__ == "__main__":
