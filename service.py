@@ -77,7 +77,14 @@ def get_camera_status():
     for key in global_camera_status:
         if len(status) > 0:
             status = status + "\n"
-        status = status + "%s: %s" % (key, global_camera_status[key])
+        status = status + "%s: " % key
+        substatus = ''
+        istatus = global_camera_status[key]
+        for subkey in istatus:
+            if len(substatus) > 0:
+                substatus = substatus + ", "
+            substatus = substatus + "%s: %s" % (subkey, istatus[subkey])
+        status = status + substatus
     return status
 
 # Handle Slack slash command.
@@ -154,9 +161,15 @@ def get_camera(instance):
         logger.info("Invalid camera instance. Aborting")
         return abort(400)
     instance = int(instance)
-    logger.info("Camera %d parameter query" % instance)
+    logger.info("Camera %d parameter query, args %s" % (instance, request.args))
+    status = {}
     global global_camera_status
-    global_camera_status[instance] = datetime.datetime.now()
+    if instance in global_camera_status:
+        status = global_camera_status[instance]
+    if request.args.get('active'):
+        status['active'] = request.args.get('active')
+    status['heartbeat'] = datetime.datetime.now()
+    global_camera_status[instance] = status
     keepalive = int(os.environ['CAMERA_DEFAULT_KEEPALIVE'])
     pixel_threshold = int(os.environ['CAMERA_DEFAULT_PIXEL_THRESHOLD'])
     percent_threshold = int(os.environ['CAMERA_DEFAULT_PERCENT_THRESHOLD'])
