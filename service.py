@@ -205,6 +205,8 @@ def get_camera(instance):
         status = global_camera_status[instance]
     if request.args.get('active'):
         status['active'] = request.args.get('active')
+    if request.args.get('continuous'):
+        status['continuous'] = request.args.get('continuous')
     action = None
     if instance in global_camera_action:
         action = global_camera_action[instance]
