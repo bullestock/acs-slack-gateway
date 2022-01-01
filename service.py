@@ -213,7 +213,7 @@ def get_camera(instance):
     if instance in global_camera_action:
         action = global_camera_action[instance]
         global_camera_action[instance] = None
-    status['heartbeat'] = datetime.datetime.now()
+    status['Heartbeat'] = datetime.datetime.now().replace(microsecond=0)
     global_camera_status[instance] = status
     keepalive = int(os.environ['CAMERA_DEFAULT_KEEPALIVE'])
     pixel_threshold = int(os.environ['CAMERA_DEFAULT_PIXEL_THRESHOLD'])
