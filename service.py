@@ -150,7 +150,7 @@ def command(command):
             )
         instance = int(params[0])
         action = params[1]
-        if action in ['on', 'off']:
+        if action in ['on', 'off', 'continuous', 'motion']:
             global global_camera_action
             global_camera_action[instance] = action
             return jsonify(
