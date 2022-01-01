@@ -7,7 +7,8 @@ import uuid
 
 global_acs_status = None
 global_camera_status = {}
-global_action = None
+global_acs_action = None
+global_camera_action = {}
 
 app = Flask(__name__)
 
@@ -27,11 +28,21 @@ def is_slack_request_valid(request):
     return is_token_valid and is_team_id_valid    
 
 # Validate user in /acsaction
-def is_action_allowed(request):
+def is_acs_action_allowed(request):
     try:
         username = request.form['user_name']
-        logger.info("Action user: %s" % username)
-        return username in os.environ['ACTION_USERS'].split(',')
+        logger.info("ACS action user: %s" % username)
+        return username in os.environ['ACS_ACTION_USERS'].split(',')
+    except Exception as e:
+        logger.info("Exception: %s" % e)
+        return False
+
+# Validate user in /camaction
+def is_cam_action_allowed(request):
+    try:
+        username = request.form['user_name']
+        logger.info("Camera action user: %s" % username)
+        return username in os.environ['CAM_ACTION_USERS'].split(',')
     except Exception as e:
         logger.info("Exception: %s" % e)
         return False
@@ -105,24 +116,50 @@ def command(command):
             response_type='in_channel',
             text=get_camera_status(),
         )
-    elif command == 'action':
-        logger.info("Action : %s" % command)
-        if not is_action_allowed(request):
+    elif command == 'action' or command == 'acsaction':
+        logger.info("ACS action: %s" % command)
+        if not is_acs_action_allowed(request):
             return jsonify(
                 response_type='in_channel',
-                text='You are not allowed to perform actions'
+                text='You are not allowed to perform ACS actions'
             )
         action = request.form['text']
         if action in ['calibrate', 'lock', 'unlock']:
-            global global_action
-            global_action = action
+            global global_acs_action
+            global_acs_action = action
             return jsonify(
                 response_type='in_channel',
-                text="Action '%s' queued" % action)
+                text="ACS action '%s' queued" % action)
         else:
             return jsonify(
                 response_type='in_channel',
-                text="Action '%s' not supported" % action
+                text="ACS action '%s' not supported" % action
+        )
+    elif command == 'camaction':
+        logger.info("Camera action: %s" % command)
+        if not is_cam_action_allowed(request):
+            return jsonify(
+                response_type='in_channel',
+                text='You are not allowed to perform camera actions'
+            )
+        params = request.form['text'].split(' ')
+        if len(params) != 2:
+            return jsonify(
+                response_type='in_channel',
+                text='Invalid parameters for camera action'
+            )
+        instance = int(params[0])
+        action = params[1]
+        if action in ['on', 'off']:
+            global global_camera_action
+            global_camera_action[instance] = action
+            return jsonify(
+                response_type='in_channel',
+                text="Camera action '%s' queued for instance %d" % (action, instance))
+        else:
+            return jsonify(
+                response_type='in_channel',
+                text="Camera action '%s' not supported" % action
         )
     else:
         return "Unknown command", 200
@@ -134,9 +171,9 @@ def query():
     if not is_acs_request_valid(request):
         logger.info("Invalid request. Aborting")
         return abort(403)
-    global global_action
-    action = global_action
-    global_action = None
+    global global_acs_action
+    action = global_acs_action
+    global_acs_action = None
     return jsonify(action=action)
 
 # /acsstatus: Called by ACS to set status
@@ -168,6 +205,10 @@ def get_camera(instance):
         status = global_camera_status[instance]
     if request.args.get('active'):
         status['active'] = request.args.get('active')
+    action = None
+    if instance in global_camera_action:
+        action = global_camera_action[instance]
+        global_camera_action[instance] = None
     status['heartbeat'] = datetime.datetime.now()
     global_camera_status[instance] = status
     keepalive = int(os.environ['CAMERA_DEFAULT_KEEPALIVE'])
@@ -176,7 +217,8 @@ def get_camera(instance):
     logger.info("Camera defaults: %d, %d, %d" % (keepalive, pixel_threshold, percent_threshold))
     return jsonify(keepalive=keepalive,
                    pixel_threshold=pixel_threshold,
-                   percent_threshold=percent_threshold)
+                   percent_threshold=percent_threshold,
+                   action=action)
 
 # Start the server on port 5000
 if __name__ == "__main__":
