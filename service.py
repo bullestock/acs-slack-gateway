@@ -207,6 +207,8 @@ def get_camera(instance):
         status['Active'] = request.args.get('active')
     if request.args.get('continuous'):
         status['Continuous mode'] = request.args.get('continuous')
+    if request.args.get('last_pic'):
+        status['Last picture'] = request.args.get('last_pic')
     if request.args.get('version'):
         status['Version'] = request.args.get('version')
     action = None
