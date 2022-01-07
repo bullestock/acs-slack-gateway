@@ -185,6 +185,7 @@ def status():
         return abort(403)
     global global_acs_status
     global_acs_status = request.json['status']
+    global_acs_status['last update'] = datetime.datetime.now().replace(microsecond=0)
     logger.info("Storing status: %s" % global_acs_status)
     return "", 200
 
