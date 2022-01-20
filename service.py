@@ -1,10 +1,22 @@
 from flask import Flask, request, abort, jsonify
 import datetime
+import json
 import logging
 import os
 import requests
 import uuid
 
+SLAGIOS_STATUS_FILE='/opt/service/monitoring/cam-heartbeat'
+STATUS_DIR='/opt/service/persistent'
+CAM_STATUS_DIR=STATUS_DIR + '/cams'
+
+if not os.path.isfile(SLAGIOS_STATUS_FILE):
+    with open(SLAGIOS_STATUS_FILE, 'w', encoding = 'utf-8') as f:
+        f.write("OK\nStarting|a=0")
+
+if not os.path.isdir(CAM_STATUS_DIR):
+    os.mkdir(CAM_STATUS_DIR)
+        
 global_acs_status = None
 global_camera_status = {}
 global_acs_action = None
@@ -216,8 +228,10 @@ def get_camera(instance):
     if instance in global_camera_action:
         action = global_camera_action[instance]
         global_camera_action[instance] = None
-    status['Heartbeat'] = datetime.datetime.now().replace(microsecond=0)
+    status['Heartbeat'] = datetime.datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
     global_camera_status[instance] = status
+    with open('%s/%d' % (CAM_STATUS_DIR, instance), 'w', encoding = 'utf-8') as f:
+        f.write(json.dumps(status))
     keepalive = int(os.environ['CAMERA_DEFAULT_KEEPALIVE'])
     pixel_threshold = int(os.environ['CAMERA_DEFAULT_PIXEL_THRESHOLD'])
     percent_threshold = int(os.environ['CAMERA_DEFAULT_PERCENT_THRESHOLD'])
