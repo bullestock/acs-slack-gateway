@@ -18,7 +18,6 @@ if not os.path.isdir(CAM_STATUS_DIR):
     os.mkdir(CAM_STATUS_DIR)
         
 global_acs_status = None
-global_camera_status = {}
 global_acs_action = None
 global_camera_action = {}
 
@@ -91,7 +90,7 @@ def get_acs_status():
     return status
 
 # Return camera status set by most recent call to /camstatus
-def get_camera_status():
+def get_camera_status_dict():
     cam_status = {}
     dir = os.fsencode(CAM_STATUS_DIR)
     for file in os.listdir(dir):
@@ -101,6 +100,10 @@ def get_camera_status():
             with open(path, 'r', encoding = 'utf-8') as f:
                 j = json.loads(f.read())
                 cam_status[filename] = j
+    return cam_status
+
+def get_camera_status():
+    cam_status = get_camera_status_dict()
     if not cam_status:
         return "No status"
     status = ''
@@ -220,9 +223,9 @@ def get_camera(instance):
     instance = int(instance)
     logger.info("Camera %d parameter query, args %s" % (instance, request.args))
     status = {}
-    global global_camera_status
-    if instance in global_camera_status:
-        status = global_camera_status[instance]
+    cam_status = get_camera_status_dict()
+    if instance in cam_status:
+        status = cam_status[instance]
     if request.args.get('active'):
         status['Active'] = request.args.get('active')
     if request.args.get('continuous'):
@@ -236,7 +239,6 @@ def get_camera(instance):
         action = global_camera_action[instance]
         global_camera_action[instance] = None
     status['Heartbeat'] = datetime.datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
-    global_camera_status[instance] = status
     with open('%s/%d' % (CAM_STATUS_DIR, instance), 'w', encoding = 'utf-8') as f:
         f.write(json.dumps(status))
     keepalive = int(os.environ['CAMERA_DEFAULT_KEEPALIVE'])
