@@ -92,17 +92,24 @@ def get_acs_status():
 
 # Return camera status set by most recent call to /camstatus
 def get_camera_status():
-    global global_camera_status
-    logger.info("Stored status: %s" % global_camera_status)
-    if not global_camera_status:
+    cam_status = {}
+    dir = os.fsencode(CAM_STATUS_DIR)
+    for file in os.listdir(dir):
+        filename = os.fsdecode(file)
+        path = "%s/%s" % (CAM_STATUS_DIR, filename)
+        if filename.isdigit():
+            with open(path, 'r', encoding = 'utf-8') as f:
+                j = json.loads(f.read())
+                cam_status[filename] = j
+    if not cam_status:
         return "No status"
     status = ''
-    for key in global_camera_status:
+    for key in cam_status:
         if len(status) > 0:
             status = status + "\n"
         status = status + "%s: " % key
         substatus = ''
-        istatus = global_camera_status[key]
+        istatus = cam_status[key]
         for subkey in istatus:
             if len(substatus) > 0:
                 substatus = substatus + ", "
