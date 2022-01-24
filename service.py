@@ -85,7 +85,7 @@ def get_acs_status():
     with open(ACS_STATUS_FILE, 'r', encoding = 'utf-8') as f:
         j = json.loads(f.read())
         logger.info("Stored status: %s" % j)
-        if not 'Door' in j:
+        if not 'door' in j:
             return "No status"
         status = ''
         for key in j:
@@ -194,12 +194,12 @@ def command(command):
 # /acsquery: Called by ACS to see if an action is pending
 @app.route("/acsquery", methods=["POST"])
 def query():
-    logger.info("acsquery: %s" % request.json)
     if not is_acs_request_valid(request):
         logger.info("Invalid request. Aborting")
         return abort(403)
     global global_acs_action
     action = global_acs_action
+    logger.info("acsquery: action %s" % action)
     global_acs_action = None
     return jsonify(action=action)
 
