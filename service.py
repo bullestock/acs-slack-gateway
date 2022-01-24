@@ -6,18 +6,22 @@ import os
 import requests
 import uuid
 
-SLAGIOS_STATUS_FILE='/opt/service/monitoring/cam-heartbeat'
+SLAGIOS_HEARTBEAT_FILE='/opt/service/monitoring/cam-heartbeat'
 STATUS_DIR='/opt/service/persistent'
 CAM_STATUS_DIR=STATUS_DIR + '/cams'
+ACS_STATUS_FILE=STATUS_DIR + '/acs'
 
-if not os.path.isfile(SLAGIOS_STATUS_FILE):
-    with open(SLAGIOS_STATUS_FILE, 'w', encoding = 'utf-8') as f:
+if not os.path.isfile(SLAGIOS_HEARTBEAT_FILE):
+    with open(SLAGIOS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
         f.write("OK\nStarting|a=0")
+
+if not os.path.isfile(ACS_STATUS_FILE):
+    with open(ACS_STATUS_FILE, 'w', encoding = 'utf-8') as f:
+        f.write("{}")
 
 if not os.path.isdir(CAM_STATUS_DIR):
     os.mkdir(CAM_STATUS_DIR)
         
-global_acs_status = None
 global_acs_action = None
 global_camera_action = {}
 
@@ -78,16 +82,17 @@ def is_camera_request_valid(request):
 
 # Return ACS status set by most recent call to /acsstatus
 def get_acs_status():
-    global global_acs_status
-    logger.info("Stored status: %s" % global_acs_status)
-    if not global_acs_status:
-        return "No status"
-    status = ''
-    for key in global_acs_status:
-        if len(status) > 0:
-            status = status + "\n"
-        status = status + "%s: %s" % (key.capitalize(), global_acs_status[key])
-    return status
+    with open(ACS_STATUS_FILE, 'r', encoding = 'utf-8') as f:
+        j = json.loads(f.read())
+        logger.info("Stored status: %s" % j)
+        if not 'Door' in j:
+            return "No status"
+        status = ''
+        for key in j:
+            if len(status) > 0:
+                status = status + "\n"
+            status = status + "%s: %s" % (key.capitalize(), j[key])
+        return status
 
 # Return camera status set by most recent call to /camstatus
 def get_camera_status_dict():
@@ -205,10 +210,11 @@ def status():
     if not is_acs_request_valid(request):
         logger.info("Invalid request. Aborting")
         return abort(403)
-    global global_acs_status
-    global_acs_status = request.json['status']
-    global_acs_status['last update'] = datetime.datetime.now().replace(microsecond=0)
-    logger.info("Storing status: %s" % global_acs_status)
+    status = request.json['status']
+    status['last update'] = datetime.datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+    logger.info("Storing status: %s" % status)
+    with open(ACS_STATUS_FILE, 'w', encoding = 'utf-8') as f:
+        f.write(json.dumps(status))
     return "", 200
 
 # Get camera parameters
@@ -245,6 +251,8 @@ def get_camera(instance):
     pixel_threshold = int(os.environ['CAMERA_DEFAULT_PIXEL_THRESHOLD'])
     percent_threshold = int(os.environ['CAMERA_DEFAULT_PERCENT_THRESHOLD'])
     logger.info("Camera defaults: %d, %d, %d" % (keepalive, pixel_threshold, percent_threshold))
+    with open(SLAGIOS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
+        f.write("OK\nUpdated|a=0")
     return jsonify(keepalive=keepalive,
                    pixel_threshold=pixel_threshold,
                    percent_threshold=percent_threshold,
