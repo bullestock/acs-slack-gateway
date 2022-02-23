@@ -6,13 +6,18 @@ import os
 import requests
 import uuid
 
-SLAGIOS_HEARTBEAT_FILE='/opt/service/monitoring/cam-heartbeat'
+SLAGIOS_ACS_HEARTBEAT_FILE='/opt/service/monitoring/acs-heartbeat'
+SLAGIOS_CAM_HEARTBEAT_FILE='/opt/service/monitoring/cam-heartbeat'
 STATUS_DIR='/opt/service/persistent'
 CAM_STATUS_DIR=STATUS_DIR + '/cams'
 ACS_STATUS_FILE=STATUS_DIR + '/acs'
 
-if not os.path.isfile(SLAGIOS_HEARTBEAT_FILE):
-    with open(SLAGIOS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
+if not os.path.isfile(SLAGIOS_ACS_HEARTBEAT_FILE):
+    with open(SLAGIOS_ACS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
+        f.write("OK\nStarting|a=0")
+
+if not os.path.isfile(SLAGIOS_CAM_HEARTBEAT_FILE):
+    with open(SLAGIOS_CAM_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
         f.write("OK\nStarting|a=0")
 
 if not os.path.isfile(ACS_STATUS_FILE):
@@ -215,6 +220,8 @@ def status():
     logger.info("Storing status: %s" % status)
     with open(ACS_STATUS_FILE, 'w', encoding = 'utf-8') as f:
         f.write(json.dumps(status))
+    with open(SLAGIOS_ACS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
+        f.write("OK\nUpdated|a=0")
     return "", 200
 
 # Get camera parameters
@@ -251,7 +258,7 @@ def get_camera(instance):
     pixel_threshold = int(os.environ['CAMERA_DEFAULT_PIXEL_THRESHOLD'])
     percent_threshold = int(os.environ['CAMERA_DEFAULT_PERCENT_THRESHOLD'])
     logger.info("Camera defaults: %d, %d, %d" % (keepalive, pixel_threshold, percent_threshold))
-    with open(SLAGIOS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
+    with open(SLAGIOS_CAM_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
         f.write("OK\nUpdated|a=0")
     return jsonify(keepalive=keepalive,
                    pixel_threshold=pixel_threshold,
