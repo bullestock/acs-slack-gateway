@@ -231,7 +231,7 @@ def status():
 
 # /acsheartbeat: Called by BACS
 @app.route("/acsheartbeat", methods=["POST"])
-def status():
+def acsheartbeat():
     logger.info("acsheartbeat")
     if not is_acs_request_valid(request):
         logger.info("Invalid request. Aborting")
