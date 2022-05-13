@@ -236,8 +236,6 @@ def acsheartbeat():
     if not is_acs_request_valid(request):
         logger.info("Invalid request. Aborting")
         return abort(403)
-    status['last update'] = datetime.datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
-    logger.info("Storing status: %s" % status)
     with open(SLAGIOS_BACS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
         f.write("OK\nUpdated|a=0")
     return "", 200
