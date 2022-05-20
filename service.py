@@ -93,6 +93,15 @@ def is_camera_request_valid(request):
         return False
     return is_token_valid
 
+# Validate token in /camctl
+def is_camctl_request_valid(request):
+    try:
+        is_token_valid = request.headers.get('Authentication') == ("Bearer %s" % os.environ['CAMCTL_VERIFICATION_TOKEN'])
+    except Exception as e:
+        logger.info("Exception: %s" % e)
+        return False
+    return is_token_valid
+
 # Return ACS status set by most recent call to /acsstatus
 def get_acs_status():
     with open(ACS_STATUS_FILE, 'r', encoding = 'utf-8') as f:
