@@ -9,8 +9,10 @@ import uuid
 SLAGIOS_ACS_HEARTBEAT_FILE='/opt/service/monitoring/acs-heartbeat'
 SLAGIOS_BACS_HEARTBEAT_FILE='/opt/service/monitoring/bacs-heartbeat'
 SLAGIOS_CAM_HEARTBEAT_FILE='/opt/service/monitoring/cam-heartbeat'
+SLAGIOS_CAMCTL_HEARTBEAT_FILE='/opt/service/monitoring/camctl-heartbeat'
 STATUS_DIR='/opt/service/persistent'
 CAM_STATUS_DIR=STATUS_DIR + '/cams'
+CAMCTL_STATUS_DIR=STATUS_DIR + '/camctl'
 ACS_STATUS_FILE=STATUS_DIR + '/acs'
 
 if not os.path.isfile(SLAGIOS_ACS_HEARTBEAT_FILE):
@@ -34,6 +36,7 @@ if not os.path.isdir(CAM_STATUS_DIR):
         
 global_acs_action = None
 global_camera_action = {}
+global_camctl_action = {}
 
 app = Flask(__name__)
 
@@ -280,6 +283,25 @@ def get_camera(instance):
                    pixel_threshold=pixel_threshold,
                    percent_threshold=percent_threshold,
                    action=action)
+
+# Get camctl parameters
+@app.route("/camctl", methods=["GET"])
+def get_camera(instance):
+    if not is_camctl_request_valid(request):
+        logger.info("Invalid camctl request. Aborting")
+        return abort(403)
+    logger.info("Camctl args %s" % request.args)
+    status = {}
+    if request.args.get('active'):
+        status['Active'] = request.args.get('active')
+    action = global_camctl_action
+    global_camctl_action = None
+    status['Heartbeat'] = datetime.datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+    with open('%sd' % CAMCTL_STATUS_DIR, 'w', encoding = 'utf-8') as f:
+        f.write(json.dumps(status))
+    with open(SLAGIOS_CAMCTL_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
+        f.write("OK\nUpdated|a=0")
+    return jsonify(action=action)
 
 # Start the server on port 5000
 if __name__ == "__main__":
