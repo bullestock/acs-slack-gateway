@@ -307,6 +307,7 @@ def get_camctl():
     status = {}
     if request.args.get('active'):
         status['Active'] = request.args.get('active')
+    global global_camctl_action
     action = global_camctl_action
     global_camctl_action = None
     status['Heartbeat'] = datetime.datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
