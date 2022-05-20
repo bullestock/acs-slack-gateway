@@ -214,6 +214,31 @@ def command(command):
                 response_type='in_channel',
                 text="Camera action '%s' not supported" % action
         )
+    elif command == 'camctl':
+        logger.info("Camctl: %s" % command)
+        if not is_cam_action_allowed(request):
+            return jsonify(
+                response_type='in_channel',
+                text='You are not allowed to perform camera actions'
+            )
+        params = request.form['text'].split(' ')
+        if len(params) != 1:
+            return jsonify(
+                response_type='in_channel',
+                text='Invalid parameters for camctl'
+            )
+        action = params[0]
+        if action in ['on', 'off']:
+            global global_camctl_action
+            global_camctl_action = action
+            return jsonify(
+                response_type='in_channel',
+                text="Camctl action '%s' queued" % action)
+        else:
+            return jsonify(
+                response_type='in_channel',
+                text="Camctl action '%s' not supported" % action
+        )
     else:
         return "Unknown command", 200
 
