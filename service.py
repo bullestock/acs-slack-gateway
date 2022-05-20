@@ -12,7 +12,7 @@ SLAGIOS_CAM_HEARTBEAT_FILE='/opt/service/monitoring/cam-heartbeat'
 SLAGIOS_CAMCTL_HEARTBEAT_FILE='/opt/service/monitoring/camctl-heartbeat'
 STATUS_DIR='/opt/service/persistent'
 CAM_STATUS_DIR=STATUS_DIR + '/cams'
-CAMCTL_STATUS_DIR=STATUS_DIR + '/camctl'
+CAMCTL_STATUS_FILE=STATUS_DIR + '/camctl.json'
 ACS_STATUS_FILE=STATUS_DIR + '/acs'
 
 if not os.path.isfile(SLAGIOS_ACS_HEARTBEAT_FILE):
@@ -131,6 +131,9 @@ def get_camera_status_dict():
             with open(path, 'r', encoding = 'utf-8') as f:
                 j = json.loads(f.read())
                 cam_status[filename] = j
+    with open(CAMCTL_STATUS_FILE, 'r', encoding = 'utf-8') as f:
+        j = json.loads(f.read())
+        cam_status['Power'] = j
     return cam_status
 
 def get_camera_status():
@@ -336,7 +339,7 @@ def get_camctl():
     action = global_camctl_action
     global_camctl_action = None
     status['Heartbeat'] = datetime.datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
-    with open('%sd' % CAMCTL_STATUS_DIR, 'w', encoding = 'utf-8') as f:
+    with open(CAMCTL_STATUS_FILE, 'w', encoding = 'utf-8') as f:
         f.write(json.dumps(status))
     with open(SLAGIOS_CAMCTL_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
         f.write("OK\nUpdated|a=0")
