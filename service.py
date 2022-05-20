@@ -286,7 +286,7 @@ def get_camera(instance):
 
 # Get camctl parameters
 @app.route("/camctl", methods=["GET"])
-def get_camera(instance):
+def get_camctl():
     if not is_camctl_request_valid(request):
         logger.info("Invalid camctl request. Aborting")
         return abort(403)
