@@ -27,6 +27,10 @@ if not os.path.isfile(SLAGIOS_CAM_HEARTBEAT_FILE):
     with open(SLAGIOS_CAM_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
         f.write("OK\nStarting|a=0")
 
+if not os.path.isfile(SLAGIOS_CAMCTL_HEARTBEAT_FILE):
+    with open(SLAGIOS_CAMCTL_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
+        f.write("OK\nStarting|a=0")
+
 if not os.path.isfile(ACS_STATUS_FILE):
     with open(ACS_STATUS_FILE, 'w', encoding = 'utf-8') as f:
         f.write("{}")
