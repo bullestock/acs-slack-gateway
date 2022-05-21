@@ -62,9 +62,9 @@ def is_slack_request_valid(request):
 # Validate user in /acsaction
 def is_acs_action_allowed(request):
     try:
-        username = request.form['user_name']
-        logger.info("ACS action user: %s" % username)
-        return username in os.environ['ACS_ACTION_USERS'].split(',')
+        userid = request.form['user_id']
+        logger.info("ACS action user ID: %s" % userid)
+        return userid in os.environ['ACS_ACTION_USERS'].split(',')
     except Exception as e:
         logger.info("Exception: %s" % e)
         return False
@@ -72,9 +72,9 @@ def is_acs_action_allowed(request):
 # Validate user in /camaction
 def is_cam_action_allowed(request):
     try:
-        username = request.form['user_name']
-        logger.info("Camera action user: %s" % username)
-        return username in os.environ['CAM_ACTION_USERS'].split(',')
+        userid = request.form['user_id']
+        logger.info("Camera action user ID: %s" % userid)
+        return userid in os.environ['CAM_ACTION_USERS'].split(',')
     except Exception as e:
         logger.info("Exception: %s" % e)
         return False
