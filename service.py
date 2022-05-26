@@ -14,6 +14,7 @@ STATUS_DIR='/opt/service/persistent'
 CAM_STATUS_DIR=STATUS_DIR + '/cams'
 CAMCTL_STATUS_FILE=STATUS_DIR + '/camctl.json'
 ACS_STATUS_FILE=STATUS_DIR + '/acs'
+BACS_STATUS_FILE=STATUS_DIR + '/bacs'
 
 if not os.path.isfile(SLAGIOS_ACS_HEARTBEAT_FILE):
     with open(SLAGIOS_ACS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
@@ -33,6 +34,10 @@ if not os.path.isfile(SLAGIOS_CAMCTL_HEARTBEAT_FILE):
 
 if not os.path.isfile(ACS_STATUS_FILE):
     with open(ACS_STATUS_FILE, 'w', encoding = 'utf-8') as f:
+        f.write("{}")
+
+if not os.path.isfile(BACS_STATUS_FILE):
+    with open(BACS_STATUS_FILE, 'w', encoding = 'utf-8') as f:
         f.write("{}")
 
 if not os.path.isdir(CAM_STATUS_DIR):
@@ -118,6 +123,11 @@ def get_acs_status():
             if len(status) > 0:
                 status = status + "\n"
             status = status + "%s: %s" % (key.capitalize(), j[key])
+        with open(BACS_STATUS_FILE, 'r', encoding = 'utf-8') as f:
+            for key in j:
+                if len(status) > 0:
+                    status = status + "\n"
+                status = status + "%s: %s" % (key.capitalize(), j[key])
         return status
 
 # Return camera status set by most recent call to /camstatus
@@ -280,6 +290,10 @@ def acsheartbeat():
     if not is_acs_request_valid(request):
         logger.info("Invalid request. Aborting")
         return abort(403)
+    status = {}
+    status['barn last update'] = datetime.datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+    with open(BACS_STATUS_FILE, 'w', encoding = 'utf-8') as f:
+        f.write(json.dumps(status))
     with open(SLAGIOS_BACS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
         f.write("OK\nUpdated|a=0")
     return "", 200
