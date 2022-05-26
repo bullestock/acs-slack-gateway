@@ -124,6 +124,7 @@ def get_acs_status():
                 status = status + "\n"
             status = status + "%s: %s" % (key.capitalize(), j[key])
         with open(BACS_STATUS_FILE, 'r', encoding = 'utf-8') as f:
+            j = json.loads(f.read())
             for key in j:
                 if len(status) > 0:
                     status = status + "\n"
