@@ -46,6 +46,7 @@ if not os.path.isdir(CAM_STATUS_DIR):
 global_acs_action = None
 global_camera_action = {}
 global_camctl_action = {}
+global_acs_camaction = None
 
 app = Flask(__name__)
 
@@ -299,6 +300,17 @@ def acsheartbeat():
         f.write("OK\nUpdated|a=0")
     return "", 200
 
+# /acscamctl: Called by ACS to control camera power
+@app.route("/acscamctl", methods=["POST"])
+def acscamctl():
+    if not is_acs_request_valid(request):
+        logger.info("Invalid request. Aborting")
+        return abort(403)
+    global global_acs_camaction
+    global_acs_camaction = request.json['action']
+    logger.info("acscamctl: action %s" % global_acs_camaction)
+    return "", 200
+
 # Get camera parameters
 @app.route("/camera/<instance>", methods=["GET"])
 def get_camera(instance):
@@ -353,6 +365,11 @@ def get_camctl():
     global global_camctl_action
     action = global_camctl_action
     global_camctl_action = None
+    global global_acs_camaction
+    if not action:
+        if global_acs_camaction:
+            action = global_acs_camaction
+            global_acs_camaction = None
     status['Heartbeat'] = datetime.datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
     with open(CAMCTL_STATUS_FILE, 'w', encoding = 'utf-8') as f:
         f.write(json.dumps(status))
