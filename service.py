@@ -15,6 +15,7 @@ CAM_STATUS_DIR=STATUS_DIR + '/cams'
 CAMCTL_STATUS_FILE=STATUS_DIR + '/camctl.json'
 ACS_STATUS_FILE=STATUS_DIR + '/acs'
 BACS_STATUS_FILE=STATUS_DIR + '/bacs'
+LOG_DIR='/opt/service/persistent/logs'
 
 if not os.path.isfile(SLAGIOS_ACS_HEARTBEAT_FILE):
     with open(SLAGIOS_ACS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
@@ -42,6 +43,9 @@ if not os.path.isfile(BACS_STATUS_FILE):
 
 if not os.path.isdir(CAM_STATUS_DIR):
     os.mkdir(CAM_STATUS_DIR)
+        
+if not os.path.isdir(LOG_DIR):
+    os.mkdir(LOG_DIR)
         
 global_acs_action = None
 global_camera_action = {}
@@ -283,6 +287,21 @@ def status():
         f.write(json.dumps(status))
     with open(SLAGIOS_ACS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
         f.write("OK\nUpdated|a=0")
+    return "", 200
+
+# /acslog: Called by ACS to store a log entry
+@app.route("/acslog", methods=["POST"])
+def acslog():
+    logger.info("acslog: %s" % request.json)
+    if not is_acs_request_valid(request):
+        logger.info("Invalid request. Aborting")
+        return abort(403)
+    stamp = request.json['timestamp']
+    text = request.json['text']
+    day = datetime.datetime.now().strftime("%Y-%m-%d")
+    logfilename = 'acs-.log' % (LOG_DIR, day)
+    with open(logfilename, 'w', encoding = 'utf-8') as f:
+        f.write('%s %s' % (stamp, text))
     return "", 200
 
 # /acsheartbeat: Called by BACS
