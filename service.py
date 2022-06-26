@@ -292,14 +292,16 @@ def status():
 # /acslog: Called by ACS to store a log entry
 @app.route("/acslog", methods=["POST"])
 def acslog():
-    logger.info("acslog: %s" % request.json)
+    logger.info("acslog")
     if not is_acs_request_valid(request):
         logger.info("Invalid request. Aborting")
+        logger.info("acslog: request %s" % request.json)
         return abort(403)
     stamp = request.json['timestamp']
     text = request.json['text']
     day = datetime.datetime.now().strftime("%Y-%m-%d")
     logfilename = 'acs-.log' % (LOG_DIR, day)
+    logger.info("acslog: logfilename %s" % logfilename)
     with open(logfilename, 'w', encoding = 'utf-8') as f:
         f.write('%s %s' % (stamp, text))
     return "", 200
