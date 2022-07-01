@@ -91,12 +91,21 @@ def is_cam_action_allowed(request):
 
 # Validate token in /acsquery
 def is_acs_request_valid(request):
+    logger.info('is_acs_request_valid')
+    if not request.is_json:
+        logger.info('is_acs_request_valid: No JSON')
+        return False
+    if not 'token' in request.json:
+        logger.info('is_acs_request_valid: No token')
+        return False
     try:
-        is_token_valid = request.json['token'] == os.environ['ACS_VERIFICATION_TOKEN']
+        token = request.json['token']
+        if token == os.environ['ACS_VERIFICATION_TOKEN']:
+            return True
+        logger.info('is_acs_request_valid: Bad token %s' % token)
     except Exception as e:
         logger.info("Exception: %s" % e)
-        return False
-    return is_token_valid
+    return False
 
 # Validate token in /camera
 def is_camera_request_valid(request):
@@ -300,10 +309,10 @@ def acslog():
     stamp = request.json['timestamp']
     text = request.json['text']
     day = datetime.datetime.now().strftime("%Y-%m-%d")
-    logfilename = 'acs-.log' % (LOG_DIR, day)
+    logfilename = '%s/acs-%s.log' % (LOG_DIR, day)
     logger.info("acslog: logfilename %s" % logfilename)
     with open(logfilename, 'w', encoding = 'utf-8') as f:
-        f.write('%s %s' % (stamp, text))
+        f.write("%s %s\n" % (stamp, text))
     return "", 200
 
 # /acsheartbeat: Called by BACS
