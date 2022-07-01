@@ -311,7 +311,7 @@ def acslog():
     day = datetime.datetime.now().strftime("%Y-%m-%d")
     logfilename = '%s/acs-%s.log' % (LOG_DIR, day)
     logger.info("acslog: logfilename %s" % logfilename)
-    with open(logfilename, 'w', encoding = 'utf-8') as f:
+    with open(logfilename, 'a+', encoding = 'utf-8') as f:
         f.write("%s %s\n" % (stamp, text))
     return "", 200
 
