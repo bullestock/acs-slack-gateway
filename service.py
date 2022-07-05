@@ -308,7 +308,7 @@ def acslog():
         return abort(403)
     stamp = request.json['timestamp']
     text = request.json['text']
-    day = datetime.datetime.now().strftime("%Y-%m-%d")
+    day = datetime.datetime.now().strftime("%Y-%m-%d-%H")
     logfilename = '%s/acs-%s.log' % (LOG_DIR, day)
     logger.info("acslog: logfilename %s" % logfilename)
     with open(logfilename, 'a+', encoding = 'utf-8') as f:
