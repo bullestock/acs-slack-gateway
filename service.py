@@ -46,11 +46,24 @@ if not os.path.isdir(CAM_STATUS_DIR):
         
 if not os.path.isdir(LOG_DIR):
     os.mkdir(LOG_DIR)
-        
+
 global_acs_action = None
 global_camera_action = {}
 global_camctl_action = {}
 global_acs_camaction = None
+global_last_camctl_on = None
+
+def slack_write(msg):
+    try:
+        body = { 'channel': "monitoring", 'icon_emoji': ":panopticon:", 'parse': "full", "text": msg }
+        headers = {
+                'content_type': "application/json",
+                "Authorization": "Bearer %s" % os.environ['SLACK_WRITE_TOKEN']
+            }
+        r = requests.post(url = "https://slack.com/api/chat.postMessage", data = body, headers = headers)
+    except Exception as e:
+        print("%s Slack exception: %s" % (datetime.now, e))
+
 
 app = Flask(__name__)
 
@@ -382,7 +395,7 @@ def get_camera(instance):
                    percent_threshold=percent_threshold,
                    action=action)
 
-# Get camctl parameters
+# Get camctl parameters, store status
 @app.route("/camctl", methods=["GET"])
 def get_camctl():
     if not is_camctl_request_valid(request):
@@ -391,7 +404,12 @@ def get_camctl():
     logger.info("Camctl args %s" % request.args)
     status = {}
     if request.args.get('active'):
-        status['Active'] = request.args.get('active')
+        camctl_on = request.args.get('active')
+        status['Active'] = camctl_on
+        global global_last_camctl_on
+        if camctl_on != global_last_camctl_on:
+            slack_write('Cameras are %s' % ('on' if camctl_on == '1' else 'off'))
+            global_last_camctl_on = camctl_on
     global global_camctl_action
     action = global_camctl_action
     global_camctl_action = None
