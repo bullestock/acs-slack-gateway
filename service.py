@@ -408,7 +408,7 @@ def get_camctl():
         status['Active'] = camctl_on
         global global_last_camctl_on
         if camctl_on != global_last_camctl_on:
-            slack_write('Cameras are %s' % ('on' if camctl_on == '1' else 'off'))
+            slack_write(':camera: Cameras are %s' % ('on' if camctl_on == '1' else 'off'))
             global_last_camctl_on = camctl_on
     global global_camctl_action
     action = global_camctl_action
