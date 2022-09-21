@@ -167,11 +167,17 @@ def get_camera_status_dict():
         path = "%s/%s" % (CAM_STATUS_DIR, filename)
         if filename.isdigit():
             with open(path, 'r', encoding = 'utf-8') as f:
-                j = json.loads(f.read())
-                cam_status[filename] = j
+                try:
+                    j = json.loads(f.read())
+                    cam_status[filename] = j
+                except Exception as e:
+                    logger.info("Exception reading %s: %s" % (path, e))
     with open(CAMCTL_STATUS_FILE, 'r', encoding = 'utf-8') as f:
-        j = json.loads(f.read())
-        cam_status['Power'] = j
+        try:
+            j = json.loads(f.read())
+            cam_status['Power'] = j
+        except Exception as e:
+            logger.info("Exception reading %s: %s" % (path, e))
     return cam_status
 
 def get_camera_status():
