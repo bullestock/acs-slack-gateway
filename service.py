@@ -335,7 +335,7 @@ def acslog():
 
 # /bacslog: Called by BACS to store a log entry
 @app.route("/bacslog", methods=["POST"])
-def acslog():
+def bacslog():
     logger.info("bacslog")
     if not is_acs_request_valid(request):
         logger.info("Invalid request. Aborting")
