@@ -8,6 +8,7 @@ import uuid
 
 SLAGIOS_ACS_HEARTBEAT_FILE='/opt/service/monitoring/acs-heartbeat'
 SLAGIOS_BACS_HEARTBEAT_FILE='/opt/service/monitoring/bacs-heartbeat'
+SLAGIOS_BARNDOOR_HEARTBEAT_FILE='/opt/service/monitoring/barndoor-heartbeat'
 SLAGIOS_CAM_HEARTBEAT_FILE='/opt/service/monitoring/cam-heartbeat'
 SLAGIOS_CAMCTL_HEARTBEAT_FILE='/opt/service/monitoring/camctl-heartbeat'
 STATUS_DIR='/opt/service/persistent'
@@ -15,6 +16,7 @@ CAM_STATUS_DIR=STATUS_DIR + '/cams'
 CAMCTL_STATUS_FILE=STATUS_DIR + '/camctl.json'
 ACS_STATUS_FILE=STATUS_DIR + '/acs'
 BACS_STATUS_FILE=STATUS_DIR + '/bacs'
+BARNDOOR_STATUS_FILE=STATUS_DIR + '/barndoor'
 LOG_DIR='/opt/service/persistent/logs'
 
 if not os.path.isfile(SLAGIOS_ACS_HEARTBEAT_FILE):
@@ -23,6 +25,10 @@ if not os.path.isfile(SLAGIOS_ACS_HEARTBEAT_FILE):
 
 if not os.path.isfile(SLAGIOS_BACS_HEARTBEAT_FILE):
     with open(SLAGIOS_BACS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
+        f.write("OK\nStarting|a=0")
+
+if not os.path.isfile(SLAGIOS_BARNDOOR_HEARTBEAT_FILE):
+    with open(SLAGIOS_BARNDOOR_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
         f.write("OK\nStarting|a=0")
 
 if not os.path.isfile(SLAGIOS_CAM_HEARTBEAT_FILE):
@@ -39,6 +45,10 @@ if not os.path.isfile(ACS_STATUS_FILE):
 
 if not os.path.isfile(BACS_STATUS_FILE):
     with open(BACS_STATUS_FILE, 'w', encoding = 'utf-8') as f:
+        f.write("{}")
+
+if not os.path.isfile(BARNDOOR_STATUS_FILE):
+    with open(BARNDOOR_STATUS_FILE, 'w', encoding = 'utf-8') as f:
         f.write("{}")
 
 if not os.path.isdir(CAM_STATUS_DIR):
@@ -151,6 +161,12 @@ def get_acs_status():
                 status = status + "\n"
             status = status + "%s: %s" % (key.capitalize(), j[key])
         with open(BACS_STATUS_FILE, 'r', encoding = 'utf-8') as f:
+            j = json.loads(f.read())
+            for key in j:
+                if len(status) > 0:
+                    status = status + "\n"
+                status = status + "%s: %s" % (key.capitalize(), j[key])
+        with open(BARNDOOR_STATUS_FILE, 'r', encoding = 'utf-8') as f:
             j = json.loads(f.read())
             for key in j:
                 if len(status) > 0:
@@ -344,8 +360,11 @@ def bacslog():
     stamp = request.json['timestamp']
     text = request.json['text']
     day = datetime.datetime.now().strftime("%Y-%m-%d-%H")
-    logfilename = '%s/bacs-%s.log' % (LOG_DIR, day)
-    logger.info("bacslog: logfilename %s" % logfilename)
+    ident = request.json['ident']
+    if ident == 'woodshop':
+        logfilename = '%s/bacs-%s.log' % (LOG_DIR, day)
+    else:
+        logfilename = '%s/barndoor-%s.log' % (LOG_DIR, day)
     with open(logfilename, 'a+', encoding = 'utf-8') as f:
         f.write("%s %s\n" % (stamp, text))
     return "", 200
@@ -358,11 +377,18 @@ def acsheartbeat():
         logger.info("Invalid request. Aborting")
         return abort(403)
     status = {}
-    status['barn last update'] = datetime.datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
-    with open(BACS_STATUS_FILE, 'w', encoding = 'utf-8') as f:
-        f.write(json.dumps(status))
-    with open(SLAGIOS_BACS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
-        f.write("OK\nUpdated|a=0")
+    ident = request.json['ident']
+    status['%s last update' % ident] = datetime.datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
+    if ident == 'woodshop':
+        with open(BACS_STATUS_FILE % ident, 'w', encoding = 'utf-8') as f:
+            f.write(json.dumps(status))
+            with open(SLAGIOS_BACS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
+                f.write("OK\nUpdated|a=0")
+    else:
+        with open(BARNDOOR_STATUS_FILE % ident, 'w', encoding = 'utf-8') as f:
+            f.write(json.dumps(status))
+            with open(SLAGIOS_BARNDOOR_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
+                f.write("OK\nUpdated|a=0")
     return "", 200
 
 # /acscamctl: Called by ACS to control camera power
