@@ -380,12 +380,12 @@ def acsheartbeat():
     ident = request.json['ident']
     status['%s last update' % ident] = datetime.datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
     if ident == 'woodshop':
-        with open(BACS_STATUS_FILE % ident, 'w', encoding = 'utf-8') as f:
+        with open(BACS_STATUS_FILE, 'w', encoding = 'utf-8') as f:
             f.write(json.dumps(status))
             with open(SLAGIOS_BACS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
                 f.write("OK\nUpdated|a=0")
     else:
-        with open(BARNDOOR_STATUS_FILE % ident, 'w', encoding = 'utf-8') as f:
+        with open(BARNDOOR_STATUS_FILE, 'w', encoding = 'utf-8') as f:
             f.write(json.dumps(status))
             with open(SLAGIOS_BARNDOOR_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
                 f.write("OK\nUpdated|a=0")
