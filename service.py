@@ -377,6 +377,8 @@ def acsheartbeat():
         logger.info("Invalid request. Aborting")
         return abort(403)
     status = {}
+    if 'status' in request.json:
+        status = request.json['status']
     ident = request.json['ident']
     status['%s last update' % ident] = datetime.datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
     if ident == 'woodshop':
