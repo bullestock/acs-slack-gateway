@@ -160,19 +160,19 @@ def get_acs_status():
             if len(status) > 0:
                 status = status + "\n"
             status = status + "%s: %s" % (key.capitalize(), j[key])
-        with open(BACS_STATUS_FILE, 'r', encoding = 'utf-8') as f:
-            j = json.loads(f.read())
-            for key in j:
-                if len(status) > 0:
-                    status = status + "\n"
-                status = status + "%s: %s" % (key.capitalize(), j[key])
-        with open(BARNDOOR_STATUS_FILE, 'r', encoding = 'utf-8') as f:
-            j = json.loads(f.read())
-            for key in j:
-                if len(status) > 0:
-                    status = status + "\n"
-                status = status + "%s: %s" % (key.capitalize(), j[key])
-        return status
+    with open(BACS_STATUS_FILE, 'r', encoding = 'utf-8') as f:
+        j = json.loads(f.read())
+        for key in j:
+            if len(status) > 0:
+                status = status + "\n"
+            status = status + "%s: %s" % (key.capitalize(), j[key])
+    with open(BARNDOOR_STATUS_FILE, 'r', encoding = 'utf-8') as f:
+        j = json.loads(f.read())
+        for key in j:
+            if len(status) > 0:
+                status = status + "\n"
+            status = status + "%s: %s" % (key.capitalize(), j[key])
+    return status
 
 # Return camera status set by most recent call to /camstatus
 def get_camera_status_dict():
