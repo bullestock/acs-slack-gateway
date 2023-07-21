@@ -65,7 +65,7 @@ global_last_camctl_on = None
 
 def slack_write(msg):
     try:
-        body = { 'channel': "monitoring", 'icon_emoji': ":panopticon:", 'parse': "full", "text": msg }
+        body = { 'channel': "private-monitoring", 'icon_emoji': ":panopticon:", 'parse': "full", "text": msg }
         headers = {
                 'content_type': "application/json",
                 "Authorization": "Bearer %s" % os.environ['SLACK_WRITE_TOKEN']
