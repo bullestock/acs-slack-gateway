@@ -341,6 +341,7 @@ def acslog():
         logger.info("Invalid request. Aborting")
         logger.info("acslog: request %s" % request.json)
         return abort(403)
+    logger.info("acslog: request %s" % request.json)
     stamp = request.json['timestamp']
     text = request.json['text']
     day = datetime.datetime.now().strftime("%Y-%m-%d-%H")
