@@ -345,12 +345,18 @@ def acslog():
     stamp = request.json['timestamp']
     text = request.json['text']
     day = datetime.datetime.now().strftime("%Y-%m-%d-%H")
-    logfilename = '%s/acs-%s.log' % (LOG_DIR, day)
+    if device in request.json:
+        # Device-specific logging
+        logfilename = '%s/acs-%s-%s.log' % (LOG_DIR, request.json['device'], day)
+    else:
+        # Legacy
+        logfilename = '%s/acs-%s.log' % (LOG_DIR, day)
     with open(logfilename, 'a+', encoding = 'utf-8') as f:
         f.write("%s %s\n" % (stamp, text))
     return "", 200
 
 # /bacslog: Called by BACS to store a log entry
+# DEPRECATED, use /acslog with 'device'
 @app.route("/bacslog", methods=["POST"])
 def bacslog():
     logger.info("bacslog")
