@@ -345,7 +345,7 @@ def acslog():
     stamp = request.json['timestamp']
     text = request.json['text']
     day = datetime.datetime.now().strftime("%Y-%m-%d-%H")
-    if device in request.json:
+    if 'device' in request.json:
         # Device-specific logging
         logfilename = '%s/acs-%s-%s.log' % (LOG_DIR, request.json['device'], day)
     else:
