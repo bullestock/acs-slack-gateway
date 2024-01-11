@@ -7,6 +7,7 @@ import requests
 import uuid
 
 SLAGIOS_ACS_HEARTBEAT_FILE='/opt/service/monitoring/acs-heartbeat'
+SLAGIOS_ACS_HEARTBEAT_FILE_TEMPLATE='/opt/service/monitoring/acs-%S-heartbeat'
 SLAGIOS_BACS_HEARTBEAT_FILE='/opt/service/monitoring/bacs-heartbeat'
 SLAGIOS_BARNDOOR_HEARTBEAT_FILE='/opt/service/monitoring/barndoor-heartbeat'
 SLAGIOS_CAM_HEARTBEAT_FILE='/opt/service/monitoring/cam-heartbeat'
@@ -15,6 +16,7 @@ STATUS_DIR='/opt/service/persistent'
 CAM_STATUS_DIR=STATUS_DIR + '/cams'
 CAMCTL_STATUS_FILE=STATUS_DIR + '/camctl.json'
 ACS_STATUS_FILE=STATUS_DIR + '/acs'
+ACS_STATUS_FILE_TEMPLATE=STATUS_DIR + '/acs-%s'
 BACS_STATUS_FILE=STATUS_DIR + '/bacs'
 BARNDOOR_STATUS_FILE=STATUS_DIR + '/barndoor'
 LOG_DIR='/opt/service/persistent/logs'
@@ -327,9 +329,23 @@ def status():
     status = request.json['status']
     status['last update'] = datetime.datetime.now().replace(microsecond=0).strftime("%Y-%m-%d %H:%M:%S")
     logger.info("Storing status: %s" % status)
-    with open(ACS_STATUS_FILE, 'w', encoding = 'utf-8') as f:
+    device = None
+    if 'device' in request.json:
+        device = request.json['device']
+    # Brainfart workaround
+    if 'ident' in request.json:
+        device = request.json['ident']
+    if device:
+        # Device-specific status
+        statusfilename = ACS_STATUS_FILE % device
+        heartbeatfilename = SLAGIOS_ACS_HEARTBEAT_FILE_TEMPLATE % device
+    else:
+        # Legacy
+        statusfilename = ACS_STATUS_FILE
+        heartbeatfilename = SLAGIOS_ACS_HEARTBEAT_FILE
+    with open(statusfilename, 'w', encoding = 'utf-8') as f:
         f.write(json.dumps(status))
-    with open(SLAGIOS_ACS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
+    with open(heartbeatfilename, 'w', encoding = 'utf-8') as f:
         f.write("OK\nUpdated|a=0")
     return "", 200
 
