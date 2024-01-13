@@ -337,7 +337,7 @@ def status():
         device = request.json['ident']
     if device:
         # Device-specific status
-        statusfilename = ACS_STATUS_FILE % device
+        statusfilename = ACS_STATUS_FILE_TEMPLATE % device
         heartbeatfilename = SLAGIOS_ACS_HEARTBEAT_FILE_TEMPLATE % device
     else:
         # Legacy
