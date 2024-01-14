@@ -7,7 +7,7 @@ import requests
 import uuid
 
 SLAGIOS_ACS_HEARTBEAT_FILE='/opt/service/monitoring/acs-heartbeat'
-SLAGIOS_ACS_HEARTBEAT_FILE_TEMPLATE='/opt/service/monitoring/acs-%S-heartbeat'
+SLAGIOS_ACS_HEARTBEAT_FILE_TEMPLATE='/opt/service/monitoring/acs-%s-heartbeat'
 SLAGIOS_BACS_HEARTBEAT_FILE='/opt/service/monitoring/bacs-heartbeat'
 SLAGIOS_BARNDOOR_HEARTBEAT_FILE='/opt/service/monitoring/barndoor-heartbeat'
 SLAGIOS_CAM_HEARTBEAT_FILE='/opt/service/monitoring/cam-heartbeat'
