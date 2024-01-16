@@ -17,6 +17,7 @@ CAM_STATUS_DIR=STATUS_DIR + '/cams'
 CAMCTL_STATUS_FILE=STATUS_DIR + '/camctl.json'
 ACS_STATUS_FILE=STATUS_DIR + '/acs'
 ACS_STATUS_FILE_TEMPLATE=STATUS_DIR + '/acs-%s'
+ACS_CRASH_DUMP_FILE='/opt/service/monitoring/acs-crashdump'
 BACS_STATUS_FILE=STATUS_DIR + '/bacs'
 BARNDOOR_STATUS_FILE=STATUS_DIR + '/barndoor'
 LOG_DIR='/opt/service/persistent/logs'
@@ -369,6 +370,10 @@ def acslog():
         logfilename = '%s/acs-%s.log' % (LOG_DIR, day)
     with open(logfilename, 'a+', encoding = 'utf-8') as f:
         f.write("%s %s\n" % (stamp, text))
+    # Check for crash dump
+    if 'CORE DUMP START' in text:
+        with open(ACS_CRASH_DUMP_FILE, 'a+', encoding = 'utf-8') as f:
+            f.write("%s\n", stamp)
     return "", 200
 
 # /bacslog: Called by BACS to store a log entry
