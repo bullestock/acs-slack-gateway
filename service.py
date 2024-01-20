@@ -60,6 +60,7 @@ if not os.path.isdir(CAM_STATUS_DIR):
 if not os.path.isdir(LOG_DIR):
     os.mkdir(LOG_DIR)
 
+global_acs_device = None
 global_acs_action = None
 global_camera_action = {}
 global_camctl_action = {}
@@ -236,19 +237,30 @@ def command(command):
             text=get_camera_status(),
         )
     elif command == 'action' or command == 'acsaction':
-        logger.info("ACS action: %s" % command)
         if not is_acs_action_allowed(request):
             return jsonify(
                 response_type='in_channel',
                 text='You are not allowed to perform ACS actions'
             )
-        action = request.form['text']
+        text = request.form['text']
+        logger.info("ACS action: %s" % text)
+        device, action = text.split(' ')
+        if not device:
+            return jsonify(
+                response_type='in_channel',
+                text='Missing device')
+        if not device or not action:
+            return jsonify(
+                response_type='in_channel',
+                text='Missing action')
         if action in ['calibrate', 'lock', 'unlock']:
+            global global_acs_device
+            global_acs_device = device
             global global_acs_action
             global_acs_action = action
             return jsonify(
                 response_type='in_channel',
-                text="ACS action '%s' queued" % action)
+                text=f"ACS action '{action}' queued for '{device}")
         else:
             return jsonify(
                 response_type='in_channel',
@@ -314,11 +326,13 @@ def query():
     if not is_acs_request_valid(request):
         logger.info("Invalid request. Aborting")
         return abort(403)
+    global global_acs_device
+    device = global_acs_device
     global global_acs_action
     action = global_acs_action
-    logger.info("acsquery: action %s" % action)
+    logger.info(f'acsquery: device {device} action {action}')
     global_acs_action = None
-    return jsonify(action=action)
+    return jsonify(device=device, action=action)
 
 # /acsstatus: Called by ACS to set status
 @app.route("/acsstatus", methods=["POST"])
