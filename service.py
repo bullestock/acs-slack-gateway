@@ -326,13 +326,19 @@ def query():
     if not is_acs_request_valid(request):
         logger.info("Invalid request. Aborting")
         return abort(403)
+    if not 'device' in request.json:
+        logger.info('Ignoring /acsquery with no device')
+        return abort(403)
     global global_acs_device
+    if request.json['device'] != global_acs_device:
+        logger.info('Ignoring /acsquery from other device')
+        return jsonify(action=None)
     device = global_acs_device
     global global_acs_action
     action = global_acs_action
     logger.info(f'acsquery: device {device} action {action}')
     global_acs_action = None
-    return jsonify(device=device, action=action)
+    return jsonify(action=action)
 
 # /acsstatus: Called by ACS to set status
 @app.route("/acsstatus", methods=["POST"])
