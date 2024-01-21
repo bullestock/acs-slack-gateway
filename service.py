@@ -255,14 +255,14 @@ def command(command):
                 text='Missing action')
         device = tokens[0]
         action = tokens[1]
-        if action in ['calibrate', 'lock', 'unlock']:
+        if action in ['lock', 'unlock']:
             global global_acs_device
             global_acs_device = device
             global global_acs_action
             global_acs_action = action
             return jsonify(
                 response_type='in_channel',
-                text=f"ACS action '{action}' queued for '{device}")
+                text=f"ACS action '{action}' queued for '{device}'")
         else:
             return jsonify(
                 response_type='in_channel',
