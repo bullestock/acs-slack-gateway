@@ -244,15 +244,17 @@ def command(command):
             )
         text = request.form['text']
         logger.info("ACS action: %s" % text)
-        device, action = text.split(' ')
-        if not device:
+        tokens = text.split(' ')
+        if len(tokens) < 2:
             return jsonify(
                 response_type='in_channel',
                 text='Missing device')
-        if not device or not action:
+        if len(tokens) < 1:
             return jsonify(
                 response_type='in_channel',
                 text='Missing action')
+        device = tokens[0]
+        action = tokens[1]
         if action in ['calibrate', 'lock', 'unlock']:
             global global_acs_device
             global_acs_device = device
