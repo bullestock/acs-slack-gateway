@@ -146,7 +146,7 @@ def get_acs_status():
             status += f'{dir.capitalize()}:\n'
             for key in j:
                 if len(status) > 0:
-                    status = += "\n"
+                    status += "\n"
                 status += "    %s: %s" % (key.capitalize(), j[key])
     return status
 
