@@ -6,8 +6,6 @@ import os
 import requests
 import uuid
 
-SLAGIOS_BACS_HEARTBEAT_FILE='/opt/service/monitoring/bacs-heartbeat'
-SLAGIOS_BARNDOOR_HEARTBEAT_FILE='/opt/service/monitoring/barndoor-heartbeat'
 SLAGIOS_CAM_HEARTBEAT_FILE='/opt/service/monitoring/cam-heartbeat'
 SLAGIOS_CAMCTL_HEARTBEAT_FILE='/opt/service/monitoring/camctl-heartbeat'
 STATUS_DIR='/opt/service/persistent'
@@ -23,14 +21,6 @@ LOG_DIR='/opt/service/persistent/logs'
 for dir in [ ACS_STATUS_DIR, CAM_STATUS_DIR, LOG_DIR ]:
     if not os.path.isdir(dir):
         os.mkdir(dir)
-
-if not os.path.isfile(SLAGIOS_BACS_HEARTBEAT_FILE):
-    with open(SLAGIOS_BACS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
-        f.write("OK\nStarting|a=0")
-
-if not os.path.isfile(SLAGIOS_BARNDOOR_HEARTBEAT_FILE):
-    with open(SLAGIOS_BARNDOOR_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
-        f.write("OK\nStarting|a=0")
 
 if not os.path.isfile(SLAGIOS_CAM_HEARTBEAT_FILE):
     with open(SLAGIOS_CAM_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
@@ -140,30 +130,24 @@ def is_camctl_request_valid(request):
         return False
     return is_token_valid
 
+def get_immediate_subdirectories(a_dir):
+    return [name for name in os.listdir(a_dir)
+            if os.path.isdir(os.path.join(a_dir, name))]
+
 # Return ACS status set by most recent call to /acsstatus
 def get_acs_status():
-    with open(ACS_STATUS_FILE, 'r', encoding = 'utf-8') as f:
-        j = json.loads(f.read())
-        logger.info("Stored status: %s" % j)
-        if not 'door' in j:
-            return "No status"
-        status = ''
-        for key in j:
-            if len(status) > 0:
-                status = status + "\n"
-            status = status + "%s: %s" % (key.capitalize(), j[key])
-    with open(BACS_STATUS_FILE, 'r', encoding = 'utf-8') as f:
-        j = json.loads(f.read())
-        for key in j:
-            if len(status) > 0:
-                status = status + "\n"
-            status = status + "%s: %s" % (key.capitalize(), j[key])
-    with open(BARNDOOR_STATUS_FILE, 'r', encoding = 'utf-8') as f:
-        j = json.loads(f.read())
-        for key in j:
-            if len(status) > 0:
-                status = status + "\n"
-            status = status + "%s: %s" % (key.capitalize(), j[key])
+    dirs = get_immediate_subdirectories(ACS_STATUS_DIR)
+    status = ''
+    for dir in dirs:
+        dir_path = os.path.join(ACS_STATUS_DIR, dir)
+        with open(os.path.join(dir_path, 'status'), 'r', encoding = 'utf-8') as f:
+            j = json.loads(f.read())
+            logger.info(f'Stored {dir} status: {j}')
+            status += f'{dir.capitalize()}:\n'
+            for key in j:
+                if len(status) > 0:
+                    status = += "\n"
+                status += "    %s: %s" % (key.capitalize(), j[key])
     return status
 
 # Return camera status set by most recent call to /camstatus
