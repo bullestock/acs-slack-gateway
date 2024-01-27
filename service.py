@@ -20,6 +20,12 @@ BACS_STATUS_FILE=STATUS_DIR + '/bacs'
 BARNDOOR_STATUS_FILE=STATUS_DIR + '/barndoor'
 LOG_DIR='/opt/service/persistent/logs'
 
+for dir in [ ACS_STATUS_DIR, CAM_STATUS_DIR, LOG_DIR ]:
+    if not os.path.isdir(dir):
+        os.mkdir(dir)
+
+if not os.path.isdir(SLAGIOS_BACS_HEARTBEAT_FILE):
+
 if not os.path.isfile(SLAGIOS_BACS_HEARTBEAT_FILE):
     with open(SLAGIOS_BACS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
         f.write("OK\nStarting|a=0")
@@ -43,15 +49,6 @@ if not os.path.isfile(BACS_STATUS_FILE):
 if not os.path.isfile(BARNDOOR_STATUS_FILE):
     with open(BARNDOOR_STATUS_FILE, 'w', encoding = 'utf-8') as f:
         f.write("{}")
-
-if not os.path.isdir(ACS_STATUS_DIR):
-    os.mkdir(ACS_STATUS_DIR)
-        
-if not os.path.isdir(CAM_STATUS_DIR):
-    os.mkdir(CAM_STATUS_DIR)
-        
-if not os.path.isdir(LOG_DIR):
-    os.mkdir(LOG_DIR)
 
 global_acs_device = None
 global_acs_action = None
@@ -350,8 +347,11 @@ def status():
         logger.info('Missing device in /acsstatus')
         return "", 403
     device = request.json['device']
-    statusfilename = os.path.join(os.path.join(ACS_STATUS_DIR, device), 'status')
-    heartbeatfilename = os.path.join(os.path.join(ACS_STATUS_DIR, device), 'heartbeat')
+    device_dir = os.path.join(ACS_STATUS_DIR, device)
+    if not os.path.isdir(device_dir):
+        os.mkdir(device_dir)
+    statusfilename = os.path.join(device_dir, 'status')
+    heartbeatfilename = os.path.join(device_dir, 'heartbeat')
     with open(statusfilename, 'w', encoding = 'utf-8') as f:
         f.write(json.dumps(status))
     with open(heartbeatfilename, 'w', encoding = 'utf-8') as f:
