@@ -24,8 +24,6 @@ for dir in [ ACS_STATUS_DIR, CAM_STATUS_DIR, LOG_DIR ]:
     if not os.path.isdir(dir):
         os.mkdir(dir)
 
-if not os.path.isdir(SLAGIOS_BACS_HEARTBEAT_FILE):
-
 if not os.path.isfile(SLAGIOS_BACS_HEARTBEAT_FILE):
     with open(SLAGIOS_BACS_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
         f.write("OK\nStarting|a=0")
