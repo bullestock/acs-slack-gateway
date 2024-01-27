@@ -145,9 +145,7 @@ def get_acs_status():
             logger.info(f'Stored {dir} status: {j}')
             status += f'{dir.capitalize()}:\n'
             for key in j:
-                if len(status) > 0:
-                    status += "\n"
-                status += "    %s: %s" % (key.capitalize(), j[key])
+                status += "    %s: %s\n" % (key.capitalize(), j[key])
     return status
 
 # Return camera status set by most recent call to /camstatus
