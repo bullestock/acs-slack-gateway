@@ -146,7 +146,7 @@ def get_acs_status():
             status += f'*{dir.capitalize()}*:\n'
             for key in j:
                 status += '    %s: %s\n' % (key.capitalize(), j[key])
-    return { 'type': 'mrkdwn', 'text': status }
+    return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
 
 # Return camera status set by most recent call to /camstatus
 def get_camera_status_dict():
@@ -195,12 +195,15 @@ def command(command):
     if not is_slack_request_valid(request):
         logger.info('Invalid Slack request. Aborting')
         return abort(403)
-    logger.info('Command received: %s' % command)
+    logger.info('Slack command received: %s' % command)
     if command == 'status' or command == 'acsstatus':
-        return jsonify(
+        status = get_acs_status()
+        json = jsonify(
             response_type='in_channel',
-            text=get_acs_status(),
+            blocks=[ status ],
         )
+        logger.info(f'Slack ACS status: {json}')
+        return json
     elif command == 'camstatus':
         return jsonify(
             response_type='in_channel',
