@@ -1,4 +1,4 @@
-FROM python:3.7-buster
+FROM python:3.10-bullseye
 
 ARG GIT_COMMIT=unknown
 LABEL git-commit=$GIT_COMMIT
