@@ -178,7 +178,7 @@ def get_camera_status():
     for key in cam_status:
         if len(status) > 0:
             status = status + '\n'
-        status = status + '%s: ' % key
+        status = status + '*%s*: ' % key
         substatus = ''
         istatus = cam_status[key]
         for subkey in istatus:
@@ -186,7 +186,7 @@ def get_camera_status():
                 substatus = substatus + ', '
             substatus = substatus + '%s: %s' % (subkey, istatus[subkey])
         status = status + substatus
-    return status
+    return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
 
 # Handle Slack slash command.
 # /acsaction will call /slash/action, etc.
@@ -205,9 +205,10 @@ def command(command):
         logger.info(f'Slack ACS status: {json}')
         return json
     elif command == 'camstatus':
+        status = get_camera_status()
         return jsonify(
             response_type='in_channel',
-            text=get_camera_status(),
+            blocks=[ status ],
         )
     elif command == 'action' or command == 'acsaction':
         if not is_acs_action_allowed(request):
