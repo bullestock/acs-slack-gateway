@@ -14,8 +14,6 @@ CAM_STATUS_DIR=STATUS_DIR + '/cams'
 CAMCTL_STATUS_FILE=STATUS_DIR + '/camctl.json'
 ACS_STATUS_FILE_TEMPLATE=STATUS_DIR + '/acs-%s'
 ACS_CRASH_DUMP_FILE='/opt/service/monitoring/acs-crashdump'
-BACS_STATUS_FILE=STATUS_DIR + '/bacs'
-BARNDOOR_STATUS_FILE=STATUS_DIR + '/barndoor'
 LOG_DIR='/opt/service/persistent/logs'
 
 for dir in [ ACS_STATUS_DIR, CAM_STATUS_DIR, LOG_DIR ]:
@@ -29,14 +27,6 @@ if not os.path.isfile(SLAGIOS_CAM_HEARTBEAT_FILE):
 if not os.path.isfile(SLAGIOS_CAMCTL_HEARTBEAT_FILE):
     with open(SLAGIOS_CAMCTL_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
         f.write("OK\nStarting|a=0")
-
-if not os.path.isfile(BACS_STATUS_FILE):
-    with open(BACS_STATUS_FILE, 'w', encoding = 'utf-8') as f:
-        f.write("{}")
-
-if not os.path.isfile(BARNDOOR_STATUS_FILE):
-    with open(BARNDOOR_STATUS_FILE, 'w', encoding = 'utf-8') as f:
-        f.write("{}")
 
 global_acs_device = None
 global_acs_action = None
