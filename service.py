@@ -30,6 +30,7 @@ if not os.path.isfile(SLAGIOS_CAMCTL_HEARTBEAT_FILE):
 
 global_acs_device = None
 global_acs_action = None
+global_allow_open = None
 global_camera_action = {}
 global_camctl_action = {}
 global_acs_camaction = None
@@ -209,14 +210,25 @@ def command(command):
         text = request.form['text']
         logger.info('ACS action: %s' % text)
         tokens = text.split(' ')
-        if len(tokens) < 2:
-            return jsonify(
-                response_type='in_channel',
-                text='Missing device')
         if len(tokens) < 1:
             return jsonify(
                 response_type='in_channel',
                 text='Missing action')
+        if len(tokens) < 2:
+            if action in ['lock', 'unlock']:
+                return jsonify(
+                    response_type='in_channel',
+                    text='Missing device')
+            elif action in ['open', 'close']:
+                global global_allow_open
+                global_allow_open = action == 'open'
+                return jsonify(
+                    response_type='in_channel',
+                    text=f'ACS open {"is" if global_allow_open else "not"} allowed')
+            else:
+                return jsonify(
+                    response_type='in_channel',
+                    text="ACS action '%s' not supported" % action
         device = tokens[0]
         action = tokens[1]
         if action in ['lock', 'unlock']:
@@ -295,16 +307,18 @@ def query():
     if not 'device' in request.json:
         logger.info('Ignoring /acsquery with no device')
         return abort(403)
-    global global_acs_device
-    if request.json['device'] != global_acs_device:
-        logger.info('Ignoring /acsquery from other device')
-        return jsonify(action=None)
-    device = global_acs_device
     global global_acs_action
-    action = global_acs_action
-    logger.info(f'acsquery: device {device} action {action}')
-    global_acs_action = None
-    return jsonify(action=action)
+    global global_acs_device
+    global global_allow_open
+    if request.json['device'] == global_acs_device:
+        device = global_acs_device
+        action = global_acs_action
+        logger.info(f'acsquery: device {device} action {action}')
+        global_acs_action = None
+        global_acs_device = None
+        return jsonify(action=action)
+    logger.info('Ignoring /acsquery from other device')
+    return jsonify(action=None, allow_open=global_allow_open)
 
 # /acsstatus: Called by ACS to set status
 @app.route('/acsstatus', methods=['POST'])
