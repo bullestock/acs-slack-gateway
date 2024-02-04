@@ -215,6 +215,7 @@ def command(command):
                 response_type='in_channel',
                 text='Missing action')
         if len(tokens) < 2:
+            action = tokens[0]
             if action in ['lock', 'unlock']:
                 return jsonify(
                     response_type='in_channel',
