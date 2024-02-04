@@ -228,7 +228,7 @@ def command(command):
             else:
                 return jsonify(
                     response_type='in_channel',
-                    text="ACS action '%s' not supported" % action
+                    text=f"ACS action '{action}' not supported")
         device = tokens[0]
         action = tokens[1]
         if action in ['lock', 'unlock']:
