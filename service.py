@@ -166,7 +166,7 @@ def get_camera_status():
     if not cam_status:
         return 'No status'
     status = ''
-    for key in cam_status:
+    for key in cam_status.sorted():
         if len(status) > 0:
             status = status + '\n'
         status = status + '*%s:* ' % key
