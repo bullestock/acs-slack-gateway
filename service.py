@@ -166,12 +166,12 @@ def get_camera_status():
     if not cam_status:
         return 'No status'
     status = ''
-    for key in cam_status.sorted():
+    for key, value in sorted(cam_status.items()):
         if len(status) > 0:
             status = status + '\n'
         status = status + '*%s:* ' % key
         substatus = ''
-        istatus = cam_status[key]
+        istatus = value
         for subkey in istatus:
             if len(substatus) > 0:
                 substatus = substatus + ', '
