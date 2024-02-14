@@ -136,7 +136,7 @@ def get_acs_status():
             logger.info(f'Stored {dir} status: {j}')
             status += f'*{dir.capitalize()}*:\n'
             for key in j:
-                status += '    %s: %s\n' % (key.capitalize(), j[key])
+                status += '    %s: _%s_\n' % (key.capitalize(), j[key])
     return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
 
 # Return camera status set by most recent call to /camstatus
@@ -175,7 +175,10 @@ def get_camera_status():
         for subkey in istatus:
             if len(substatus) > 0:
                 substatus = substatus + ', '
-            substatus = substatus + '%s: %s' % (subkey, istatus[subkey])
+            if key == 'active':
+                substatus += 'Active' if istatus[subkey] == '1' else 'Inactive'
+            else:
+                substatus += '%s: %s' % (subkey, istatus[subkey])
         status = status + substatus
     return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
 
