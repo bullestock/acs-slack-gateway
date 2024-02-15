@@ -175,7 +175,7 @@ def get_camera_status():
         for subkey in istatus:
             if len(substatus) > 0:
                 substatus = substatus + ', '
-            if key == 'active':
+            if key.lower() == 'active':
                 substatus += 'Active' if istatus[subkey] == '1' else 'Inactive'
             else:
                 substatus += '%s: %s' % (subkey, istatus[subkey])
