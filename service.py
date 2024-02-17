@@ -373,7 +373,7 @@ def acslog():
     day = datetime.datetime.now().strftime('%Y-%m-%d-%H')
     if 'device' in request.json:
         # Device-specific logging
-        logfilename = '%s/acs-%s-%s.log' % (LOG_DIR, request.json['device'], day)
+        logfilename = '%s/acs-%s-%s.log' % (LOG_DIR, request.json['device'].lower(), day)
     else:
         # Legacy
         logfilename = '%s/acs-%s.log' % (LOG_DIR, day)
