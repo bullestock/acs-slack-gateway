@@ -15,6 +15,7 @@ CAMCTL_STATUS_FILE=STATUS_DIR + '/camctl.json'
 ACS_STATUS_FILE_TEMPLATE=STATUS_DIR + '/acs-%s'
 ACS_CRASH_DUMP_FILE='/opt/service/monitoring/acs-crashdump'
 LOG_DIR='/opt/service/persistent/logs'
+FIRMWARE_DIR='/opt/service/persistent/firmware'
 
 for dir in [ ACS_STATUS_DIR, CAM_STATUS_DIR, LOG_DIR ]:
     if not os.path.isdir(dir):
@@ -416,6 +417,11 @@ def acscamctl():
     global_acs_camaction = request.json['action']
     logger.info('acscamctl: action %s' % global_acs_camaction)
     return '', 200
+
+# /firmware: Called by ACS to fetch firmware image
+@app.route('/firmware/<image>', methods=['GET'])
+def firmware():
+    return send_file(f'{FIRMWARE_DIR}/{image}.bin', attachment_filename=f'{image}.bin')
 
 # Get camera parameters
 @app.route('/camera/<instance>', methods=['GET'])
