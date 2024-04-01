@@ -420,7 +420,7 @@ def acscamctl():
 
 # /firmware: Called by ACS to fetch firmware image
 @app.route('/firmware/<image>', methods=['GET'])
-def firmware():
+def firmware(image):
     return send_file(f'{FIRMWARE_DIR}/{image}.bin', attachment_filename=f'{image}.bin')
 
 # Get camera parameters
