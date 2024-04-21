@@ -103,6 +103,7 @@ def is_acs_request_valid(request):
         logger.info('is_acs_request_valid: Bad token %s' % token)
     except Exception as e:
         logger.info('Exception: %s' % e)
+    logger.info('is_acs_request_valid: No?')
     return False
 
 # Validate token in /camera
@@ -138,7 +139,7 @@ def get_acs_status():
             logger.info(f'Stored {dir} status: {j}')
             status += f'*{dir.capitalize()}*:\n'
             for key in j:
-                status += '    %s: _%s_\n' % (key.capitalize(), j[key].capitalize())
+                status += '    %s: _%s_\n' % (key.capitalize(), str(j[key]).capitalize())
     return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
 
 # Return camera status set by most recent call to /camstatus
@@ -338,7 +339,7 @@ def query():
 # /acsstatus: Called by ACS to set status
 @app.route('/acsstatus', methods=['POST'])
 def status():
-    logger.info('acsstatus: %s' % request.json)
+    #logger.info('acsstatus: %s' % request.json)
     if not is_acs_request_valid(request):
         logger.info('Invalid request. Aborting')
         return abort(403)
@@ -364,7 +365,8 @@ def status():
 # /acslog: Called by ACS to store a log entry
 @app.route('/acslog', methods=['POST'])
 def acslog():
-    logger.info('acslog')
+    #logger.info('acslog')
+    logger.info('acslog: %s' % request.json)
     if not is_acs_request_valid(request):
         logger.info('Invalid request. Aborting')
         logger.info('acslog: request %s' % request.json)
