@@ -386,7 +386,7 @@ def acslog():
     # Check for crash dump
     if 'CORE DUMP START' in text:
         with open(ACS_CRASH_DUMP_FILE, 'a+', encoding = 'utf-8') as f:
-            f.write('%s\n', stamp)
+            f.write('%s\n' % stamp)
     return '', 200
 
 # /bacslog: Called by BACS to store a log entry
