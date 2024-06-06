@@ -18,6 +18,9 @@ ACS_CRASH_DUMP_FILE='/opt/service/monitoring/acs-crashdump'
 LOG_DIR='/opt/service/persistent/logs'
 FIRMWARE_DIR='/opt/service/persistent/firmware'
 
+DEVICE_ACTIONS = ['lock', 'unlock', 'reboot']
+GLOBAL_ACTIONS = ['open', 'close']
+
 for dir in [ ACS_STATUS_DIR, CAM_STATUS_DIR, LOG_DIR ]:
     if not os.path.isdir(dir):
         os.mkdir(dir)
@@ -232,11 +235,11 @@ def command(command):
                 text='Missing action')
         if len(tokens) < 2:
             action = tokens[0]
-            if action in ['lock', 'unlock']:
+            if action in DEVICE_ACTIONS:
                 return jsonify(
                     response_type='in_channel',
                     text='Missing device')
-            elif action in ['open', 'close']:
+            elif action in GLOBAL_ACTIONS:
                 global global_allow_open
                 global_allow_open = action == 'open'
                 return jsonify(
@@ -248,7 +251,7 @@ def command(command):
                     text=f"ACS action '{action}' not supported")
         device = tokens[0]
         action = tokens[1]
-        if action in ['lock', 'unlock']:
+        if action in DEVICE_ACTIONS:
             global global_acs_device
             global_acs_device = device
             global global_acs_action
