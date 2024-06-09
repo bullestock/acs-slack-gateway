@@ -18,7 +18,7 @@ ACS_CRASH_DUMP_FILE='/opt/service/monitoring/acs-crashdump'
 LOG_DIR='/opt/service/persistent/logs'
 FIRMWARE_DIR='/opt/service/persistent/firmware'
 
-DEVICE_ACTIONS = ['lock', 'unlock', 'reboot']
+DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'setdesc']
 GLOBAL_ACTIONS = ['open', 'close']
 
 for dir in [ ACS_STATUS_DIR, CAM_STATUS_DIR, LOG_DIR ]:
@@ -35,6 +35,7 @@ if not os.path.isfile(SLAGIOS_CAMCTL_HEARTBEAT_FILE):
 
 global_acs_device = None
 global_acs_action = None
+global_acs_action_arg = None
 global_allow_open = None
 global_camera_action = {}
 global_camctl_action = {}
@@ -256,6 +257,10 @@ def command(command):
             global_acs_device = device
             global global_acs_action
             global_acs_action = action
+            global_acs_action_arg = None
+            if len(tokens) > 2:
+                global global_acs_action_arg
+                global_acs_action_arg = tokens[2]
             return jsonify(
                 response_type='in_channel',
                 text=f"ACS action '{action}' queued for '{device}'")
@@ -328,15 +333,18 @@ def query():
         logger.info('Ignoring /acsquery with no device')
         return abort(403)
     global global_acs_action
+    global global_acs_action_arg
     global global_acs_device
     global global_allow_open
     if request.json['device'] == global_acs_device:
         device = global_acs_device
         action = global_acs_action
+        arg = global_acs_action_arg
         logger.info(f'acsquery: device {device} action {action}')
         global_acs_action = None
         global_acs_device = None
-        return jsonify(action=action)
+        global_acs_action_arg = None
+        return jsonify(action=action, arg=arg)
     logger.info('Ignoring /acsquery from other device')
     return jsonify(action=None, allow_open=global_allow_open)
 
