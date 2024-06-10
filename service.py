@@ -257,9 +257,9 @@ def command(command):
             global_acs_device = device
             global global_acs_action
             global_acs_action = action
+            global global_acs_action_arg
             global_acs_action_arg = None
             if len(tokens) > 2:
-                global global_acs_action_arg
                 global_acs_action_arg = ' '.join(tokens[2:])
             return jsonify(
                 response_type='in_channel',
