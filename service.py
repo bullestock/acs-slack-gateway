@@ -147,6 +147,18 @@ def get_acs_status():
                                               str(j[key]).replace('_', ' ').capitalize())
     return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
 
+# Return ACS door status
+def get_acs_door_status():
+    dirs = get_immediate_subdirectories(ACS_STATUS_DIR)
+    doors = {}
+    for dir in dirs:
+        dir_path = os.path.join(ACS_STATUS_DIR, dir)
+        with open(os.path.join(dir_path, 'status'), 'r', encoding = 'utf-8') as f:
+            j = json.loads(f.read())
+            if 'door' in j:
+                doors[dir] = j['door']
+    return doors
+
 # Return camera status set by most recent call to /camstatus
 def get_camera_status_dict():
     cam_status = {}
@@ -508,6 +520,11 @@ def get_camctl():
     with open(SLAGIOS_CAMCTL_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
         f.write('OK\nUpdated|a=0')
     return jsonify(action=action)
+
+# /doorstatus: Get door status
+@app.route('/doorstatus', methods=['GET'])
+def doorstatus():
+    return jsonify(get_acs_door_status())
 
 # Start the server on port 5000
 if __name__ == '__main__':
