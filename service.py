@@ -40,7 +40,7 @@ global_allow_open = None
 global_camera_action = {}
 global_camctl_action = {}
 global_acs_camaction = None
-global_last_camctl_on = None
+global_last_cameras_on = None
 
 def slack_write(msg):
     try:
@@ -499,13 +499,17 @@ def get_camctl():
         return abort(403)
     logger.info('Camctl args %s' % request.args)
     status = {}
-    if request.args.get('active'):
-        camctl_on = request.args.get('active')
-        status['Active'] = camctl_on
-        global global_last_camctl_on
-        if camctl_on != global_last_camctl_on:
-            slack_write(':camera: Cameras are %s' % ('on' if camctl_on == '1' else 'off'))
-            global_last_camctl_on = camctl_on
+    cameras_on = False
+    if request.args.get('cameras'):
+        cameras_on = request.args.get('cameras')
+        status['Cameras on'] = cameras_on
+    if request.args.get('estop'):
+        estop_on = request.args.get('estop')
+        status['E-stop on'] = estop_on
+    global global_last_cameras_on
+    if cameras_on != global_last_cameras_on:
+        slack_write(':camera: Cameras are %s' % ('on' if cameras_on == '1' else 'off'))
+        global_last_cameras_on = cameras_on
     global global_camctl_action
     action = global_camctl_action
     global_camctl_action = None
