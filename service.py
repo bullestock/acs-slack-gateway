@@ -321,7 +321,7 @@ def command(command):
                 text='Invalid parameters for camctl'
             )
         action = params[0]
-        if action in ['on', 'off']:
+        if action in ['on', 'off', 'reboot']:
             global global_camctl_action
             global_camctl_action = action
             return jsonify(
