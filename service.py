@@ -413,27 +413,6 @@ def acslog():
             f.write('%s\n' % stamp)
     return '', 200
 
-# /bacslog: Called by BACS to store a log entry
-# DEPRECATED, use /acslog with 'device'
-@app.route('/bacslog', methods=['POST'])
-def bacslog():
-    logger.info('bacslog')
-    if not is_acs_request_valid(request):
-        logger.info('Invalid request. Aborting')
-        logger.info('bacslog: request %s' % request.json)
-        return abort(403)
-    stamp = request.json['timestamp']
-    text = request.json['text']
-    day = datetime.datetime.now().strftime('%Y-%m-%d-%H')
-    ident = request.json['ident']
-    if ident == 'woodshop':
-        logfilename = '%s/bacs-%s.log' % (LOG_DIR, day)
-    else:
-        logfilename = '%s/barndoor-%s.log' % (LOG_DIR, day)
-    with open(logfilename, 'a+', encoding = 'utf-8') as f:
-        f.write('%s %s\n' % (stamp, text))
-    return '', 200
-
 # /acscamctl: Called by ACS to control camera power
 @app.route('/acscamctl', methods=['POST'])
 def acscamctl():
@@ -506,6 +485,8 @@ def get_camctl():
     if request.args.get('estop'):
         estop_on = request.args.get('estop')
         status['E-stop on'] = estop_on
+    if request.args.get('version'):
+        status['Version'] = request.args.get('version')
     global global_last_cameras_on
     if cameras_on != global_last_cameras_on:
         slack_write(':camera: Cameras are %s' % ('on' if cameras_on == '1' else 'off'))
