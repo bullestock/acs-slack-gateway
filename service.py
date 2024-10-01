@@ -1,4 +1,5 @@
 from flask import Flask, request, abort, jsonify, send_file
+from werkzeug.serving import WSGIRequestHandler
 
 import datetime
 import json
@@ -513,4 +514,5 @@ def doorstatus():
 
 # Start the server on port 5000
 if __name__ == '__main__':
+    WSGIRequestHandler.protocol_version = "HTTP/1.1"
     app.run(host='0.0.0.0', port=5000)
