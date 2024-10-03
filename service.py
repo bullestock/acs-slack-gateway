@@ -510,6 +510,9 @@ def get_camctl():
 # /doorstatus: Get door status
 @app.route('/doorstatus', methods=['GET'])
 def doorstatus():
+    if not is_acs_request_valid(request):
+        logger.info('Invalid doorstatus request. Aborting')
+        return abort(403)
     return jsonify(get_acs_door_status())
 
 # Start the server on port 5000
