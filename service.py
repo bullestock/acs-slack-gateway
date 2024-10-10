@@ -158,6 +158,10 @@ def get_acs_door_status():
             j = json.loads(f.read())
             if 'door' in j:
                 doors[dir] = j['door']
+            if 'space' in j:
+                space_status = j['space']
+                if space_status == 'open':
+                    doors[dir] = 'unlocked'                    
     return doors
 
 # Return camera status set by most recent call to /camstatus
