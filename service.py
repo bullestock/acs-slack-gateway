@@ -512,7 +512,7 @@ def get_camctl():
     return jsonify(action=action)
 
 # /doorstatus: Get door status
-@app.route('/doorstatus', methods=['GET'])
+@app.route('/doorstatus', methods=['POST'])
 def doorstatus():
     if not is_acs_request_valid(request):
         logger.info('Invalid doorstatus request. Aborting')
