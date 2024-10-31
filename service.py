@@ -519,6 +519,32 @@ def doorstatus():
         return abort(403)
     return jsonify(get_acs_door_status())
 
+# /spaceapi: SpaceAPI
+@app.route('/spaceapi', methods=['GET'])
+def spaceapi():
+    info = {
+        "api": "0.13",
+        "api_compatibility": ["14"],
+        "space": "Halk",
+        "logo": "http://hal9k.dk/wp-content/uploads/2012/10/hal9k_log-sky2.png",
+        "url": "http://hal9k.dk",
+        "location": {
+            "address": "Sofiendalsvej 80, 9000 Aalborg, Denmark",
+            "lon": 9.8819234,
+            "lat": 57.0187811
+        },
+        "contact": {
+            "email": "bestyrelse@hal9k.dk"
+        },
+        "state": {
+            "open": false
+        },
+        "projects": [
+            "https://wiki.hal9k.dk"
+        ]
+    }
+    return jsonify(info)
+
 # Start the server on port 5000
 if __name__ == '__main__':
     WSGIRequestHandler.protocol_version = "HTTP/1.1"
