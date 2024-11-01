@@ -43,7 +43,7 @@ global_camera_action = {}
 global_camctl_action = {}
 global_acs_camaction = None
 global_last_cameras_on = None
-global_space_open = "closed"
+global_space_open = False
 global_space_open_lastchange = 0 # UNIX timestamp
 
 def slack_write(msg):
