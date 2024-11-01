@@ -1,4 +1,5 @@
 from flask import Flask, request, abort, jsonify, send_file
+from flask_cors import CORS, cross_origin
 from werkzeug.serving import WSGIRequestHandler
 
 import datetime
@@ -58,6 +59,8 @@ def slack_write(msg):
 
 
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 logger = logging.getLogger('werkzeug')
 handler = logging.FileHandler('acsgw.log')
@@ -170,7 +173,7 @@ def get_acs_door_status():
                     old_open = global_space_open
                     global_space_open = space_status == 'open'
                     if global_space_open != old_open:
-                        global_space_open_lastchange = (datetime.utcnow() -
+                        global_space_open_lastchange = (datetime.datetime.utcnow() -
                                                         datetime.datetime(1970, 1, 1)).total_seconds()
     return doors
 
@@ -531,6 +534,7 @@ def doorstatus():
 
 # /spaceapi: SpaceAPI
 @app.route('/spaceapi', methods=['GET'])
+@cross_origin()
 def spaceapi():
     info = {
         "api": "0.13",
