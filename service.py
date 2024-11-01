@@ -173,8 +173,8 @@ def get_acs_door_status():
                     old_open = global_space_open
                     global_space_open = space_status == 'open'
                     if global_space_open != old_open:
-                        global_space_open_lastchange = (datetime.datetime.utcnow() -
-                                                        datetime.datetime(1970, 1, 1)).total_seconds()
+                        global_space_open_lastchange = int((datetime.datetime.utcnow() -
+                                                            datetime.datetime(1970, 1, 1)).total_seconds())
     return doors
 
 # Return camera status set by most recent call to /camstatus
