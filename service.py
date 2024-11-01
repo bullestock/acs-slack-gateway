@@ -562,13 +562,13 @@ def spaceapi():
             {
                 "name": "Normal membership",
                 "value": 450,
-                "currency": DKK,
+                "currency": "DKK",
                 "billing_interval": "quarterly"
             },
             {
                 "name": "Student membership",
                 "value": 225,
-                "currency": DKK,
+                "currency": "DKK",
                 "billing_interval": "quarterly"
             }
         ]
