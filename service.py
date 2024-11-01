@@ -563,13 +563,15 @@ def spaceapi():
                 "name": "Normal membership",
                 "value": 450,
                 "currency": "DKK",
-                "billing_interval": "quarterly"
+                "billing_interval": "other",
+                "description": "Billing is once per quarter"
             },
             {
                 "name": "Student membership",
                 "value": 225,
                 "currency": "DKK",
-                "billing_interval": "quarterly"
+                "billing_interval": "other",
+                "description": "Billing is once per quarter"
             }
         ]
     }
