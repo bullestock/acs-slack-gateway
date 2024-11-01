@@ -42,6 +42,8 @@ global_camera_action = {}
 global_camctl_action = {}
 global_acs_camaction = None
 global_last_cameras_on = None
+global_space_open = "closed"
+global_space_open_lastchange = 0 # UNIX timestamp
 
 def slack_write(msg):
     try:
@@ -161,7 +163,15 @@ def get_acs_door_status():
             if 'space' in j:
                 space_status = j['space']
                 if space_status == 'open':
-                    doors[dir] = 'unlocked'                    
+                    doors[dir] = 'unlocked'
+                if dir == 'main':
+                    global global_space_open
+                    global global_space_open_lastchange
+                    old_open = global_space_open
+                    global_space_open = space_status == 'open'
+                    if global_space_open != old_open:
+                        global_space_open_lastchange = (datetime.utcnow() -
+                                                        datetime.datetime(1970, 1, 1)).total_seconds()
     return doors
 
 # Return camera status set by most recent call to /camstatus
@@ -531,16 +541,32 @@ def spaceapi():
         "location": {
             "address": "Sofiendalsvej 80, 9000 Aalborg, Denmark",
             "lon": 9.8819234,
-            "lat": 57.0187811
+            "lat": 57.0187811,
+            "timezone": "Europe/Copenhagen"
         },
         "contact": {
             "email": "bestyrelse@hal9k.dk"
         },
         "state": {
-            "open": False
+            "open": global_space_open,
+            "lastchange": global_space_open_lastchange
         },
         "projects": [
             "https://wiki.hal9k.dk"
+        ],
+        "membership_plans": [
+            {
+                "name": "Normal membership",
+                "value": 450,
+                "currency": DKK,
+                "billing_interval": "quarterly"
+            },
+            {
+                "name": "Student membership",
+                "value": 225,
+                "currency": DKK,
+                "billing_interval": "quarterly"
+            }
         ]
     }
     return jsonify(info)
