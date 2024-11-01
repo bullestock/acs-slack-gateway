@@ -537,7 +537,7 @@ def spaceapi():
             "email": "bestyrelse@hal9k.dk"
         },
         "state": {
-            "open": false
+            "open": False
         },
         "projects": [
             "https://wiki.hal9k.dk"
