@@ -537,7 +537,7 @@ def doorstatus():
 @cross_origin()
 def spaceapi():
     info = {
-        "api": "0.13",
+        "api": "0.14",
         "api_compatibility": ["14"],
         "space": "Halk",
         "logo": "http://hal9k.dk/wp-content/uploads/2012/10/hal9k_log-sky2.png",
