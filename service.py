@@ -543,8 +543,8 @@ def spaceapi():
         "url": "https://hal9k.dk",
         "location": {
             "address": "Sofiendalsvej 80, 9000 Aalborg, Denmark",
-            "lon": 9.8819234,
-            "lat": 57.0187811,
+            "lon": 9.882,
+            "lat": 57.0187,
             "timezone": "Europe/Copenhagen"
         },
         "contact": {
