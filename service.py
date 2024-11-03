@@ -537,11 +537,10 @@ def doorstatus():
 @cross_origin()
 def spaceapi():
     info = {
-        "api": "0.14",
         "api_compatibility": ["14"],
         "space": "Halk",
-        "logo": "http://hal9k.dk/wp-content/uploads/2012/10/hal9k_log-sky2.png",
-        "url": "http://hal9k.dk",
+        "logo": "https://hal9k.dk/wp-content/uploads/2012/10/hal9k_log-sky2.png",
+        "url": "https://hal9k.dk",
         "location": {
             "address": "Sofiendalsvej 80, 9000 Aalborg, Denmark",
             "lon": 9.8819234,
