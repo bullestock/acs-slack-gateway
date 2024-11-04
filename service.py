@@ -229,6 +229,119 @@ def get_camera_status():
         status = status + substatus
     return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
 
+def handle_acsstatus():
+    status = get_acs_status()
+    json = jsonify(
+        response_type='in_channel',
+        blocks=[ status ],
+    )
+    logger.info(f'Slack ACS status: {json}')
+    return json
+
+def handle_camstatus():
+    status = get_camera_status()
+    return jsonify(
+        response_type='in_channel',
+        blocks=[ status ],
+    )
+
+def handle_acsaction(request):
+    if not is_acs_action_allowed(request):
+        return jsonify(
+            response_type='in_channel',
+            text='You are not allowed to perform ACS actions'
+        )
+    text = request.form['text']
+    logger.info('ACS action: %s' % text)
+    tokens = text.split(' ')
+    if len(tokens) < 1:
+        return jsonify(
+            response_type='in_channel',
+            text='Missing action')
+    if len(tokens) < 2:
+        action = tokens[0]
+        if action in DEVICE_ACTIONS:
+            return jsonify(
+                response_type='in_channel',
+                text='Missing device')
+        elif action in GLOBAL_ACTIONS:
+            global global_allow_open
+            global_allow_open = action == 'open'
+            return jsonify(
+                response_type='in_channel',
+                text=f'ACS open {"is" if global_allow_open else "not"} allowed')
+        return jsonify(
+            response_type='in_channel',
+            text=f"ACS action '{action}' not supported")
+    device = tokens[0]
+    action = tokens[1]
+    if action in DEVICE_ACTIONS:
+        global global_acs_device
+        global_acs_device = device
+        global global_acs_action
+        global_acs_action = action
+        global global_acs_action_arg
+        global_acs_action_arg = None
+        if len(tokens) > 2:
+            global_acs_action_arg = ' '.join(tokens[2:])
+        return jsonify(
+            response_type='in_channel',
+            text=f"ACS action '{action}' queued for '{device}'")
+    return jsonify(
+        response_type='in_channel',
+        text="ACS action '%s' not supported" % action
+    )
+
+def handle_camaction(request, command):
+    logger.info('Camera action: %s' % command)
+    if not is_cam_action_allowed(request):
+        return jsonify(
+            response_type='in_channel',
+            text='You are not allowed to perform camera actions'
+        )
+    params = request.form['text'].split(' ')
+    if len(params) != 2:
+        return jsonify(
+            response_type='in_channel',
+            text='Invalid parameters for camera action'
+        )
+    instance = int(params[0])
+    action = params[1]
+    if action in ['on', 'off', 'continuous', 'motion']:
+        global global_camera_action
+        global_camera_action[instance] = action
+        return jsonify(
+            response_type='in_channel',
+            text="Camera action '%s' queued for instance %d" % (action, instance))
+    return jsonify(
+        response_type='in_channel',
+        text="Camera action '%s' not supported" % action
+    )
+
+def handle_camctl(request, command):
+    logger.info('Camctl: %s' % command)
+    if not is_cam_action_allowed(request):
+        return jsonify(
+            response_type='in_channel',
+            text='You are not allowed to perform camera actions'
+        )
+    params = request.form['text'].split(' ')
+    if len(params) != 1:
+        return jsonify(
+            response_type='in_channel',
+            text='Invalid parameters for camctl'
+        )
+    action = params[0]
+    if action in ['on', 'off', 'reboot']:
+        global global_camctl_action
+        global_camctl_action = action
+        return jsonify(
+            response_type='in_channel',
+            text="Camctl action '%s' queued" % action)
+    return jsonify(
+        response_type='in_channel',
+        text="Camctl action '%s' not supported" % action
+
 # Handle Slack slash command.
 # /acsaction will call /slash/action, etc.
 @app.route('/slash/<command>', methods=['POST'])
@@ -238,118 +351,15 @@ def command(command):
         return abort(403)
     logger.info('Slack command received: %s' % command)
     if command == 'status' or command == 'acsstatus':
-        status = get_acs_status()
-        json = jsonify(
-            response_type='in_channel',
-            blocks=[ status ],
-        )
-        logger.info(f'Slack ACS status: {json}')
-        return json
-    elif command == 'camstatus':
-        status = get_camera_status()
-        return jsonify(
-            response_type='in_channel',
-            blocks=[ status ],
-        )
-    elif command == 'action' or command == 'acsaction':
-        if not is_acs_action_allowed(request):
-            return jsonify(
-                response_type='in_channel',
-                text='You are not allowed to perform ACS actions'
-            )
-        text = request.form['text']
-        logger.info('ACS action: %s' % text)
-        tokens = text.split(' ')
-        if len(tokens) < 1:
-            return jsonify(
-                response_type='in_channel',
-                text='Missing action')
-        if len(tokens) < 2:
-            action = tokens[0]
-            if action in DEVICE_ACTIONS:
-                return jsonify(
-                    response_type='in_channel',
-                    text='Missing device')
-            elif action in GLOBAL_ACTIONS:
-                global global_allow_open
-                global_allow_open = action == 'open'
-                return jsonify(
-                    response_type='in_channel',
-                    text=f'ACS open {"is" if global_allow_open else "not"} allowed')
-            else:
-                return jsonify(
-                    response_type='in_channel',
-                    text=f"ACS action '{action}' not supported")
-        device = tokens[0]
-        action = tokens[1]
-        if action in DEVICE_ACTIONS:
-            global global_acs_device
-            global_acs_device = device
-            global global_acs_action
-            global_acs_action = action
-            global global_acs_action_arg
-            global_acs_action_arg = None
-            if len(tokens) > 2:
-                global_acs_action_arg = ' '.join(tokens[2:])
-            return jsonify(
-                response_type='in_channel',
-                text=f"ACS action '{action}' queued for '{device}'")
-        else:
-            return jsonify(
-                response_type='in_channel',
-                text="ACS action '%s' not supported" % action
-        )
+        return handle_acsstatus()
+    if command == 'camstatus':
+        return handle_camstatus()
+    if command == 'action' or command == 'acsaction':
+        return handle_acsaction(request)
     elif command == 'camaction':
-        logger.info('Camera action: %s' % command)
-        if not is_cam_action_allowed(request):
-            return jsonify(
-                response_type='in_channel',
-                text='You are not allowed to perform camera actions'
-            )
-        params = request.form['text'].split(' ')
-        if len(params) != 2:
-            return jsonify(
-                response_type='in_channel',
-                text='Invalid parameters for camera action'
-            )
-        instance = int(params[0])
-        action = params[1]
-        if action in ['on', 'off', 'continuous', 'motion']:
-            global global_camera_action
-            global_camera_action[instance] = action
-            return jsonify(
-                response_type='in_channel',
-                text="Camera action '%s' queued for instance %d" % (action, instance))
-        else:
-            return jsonify(
-                response_type='in_channel',
-                text="Camera action '%s' not supported" % action
-        )
+        return handle_camaction(request, command)
     elif command == 'camctl':
-        logger.info('Camctl: %s' % command)
-        if not is_cam_action_allowed(request):
-            return jsonify(
-                response_type='in_channel',
-                text='You are not allowed to perform camera actions'
-            )
-        params = request.form['text'].split(' ')
-        if len(params) != 1:
-            return jsonify(
-                response_type='in_channel',
-                text='Invalid parameters for camctl'
-            )
-        action = params[0]
-        if action in ['on', 'off', 'reboot']:
-            global global_camctl_action
-            global_camctl_action = action
-            return jsonify(
-                response_type='in_channel',
-                text="Camctl action '%s' queued" % action)
-        else:
-            return jsonify(
-                response_type='in_channel',
-                text="Camctl action '%s' not supported" % action
-        )
+        return handle_camctl(request, command)
     else:
         return 'Unknown command', 200
 
