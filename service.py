@@ -3,6 +3,7 @@ from flask_cors import CORS, cross_origin
 from werkzeug.serving import WSGIRequestHandler
 
 import datetime
+import glob
 import json
 import logging
 import os
@@ -152,6 +153,21 @@ def get_acs_status():
                 status += '    %s: _%s_\n' % (key.replace('_', ' ').capitalize(),
                                               str(j[key]).replace('_', ' ').capitalize())
     return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
+
+def format_lines(device, lines):
+    blocks = {
+        'type': 'section',
+        'text': {
+            'text': f'*Log for {device}*\n' + ''.join(lines),
+            'type': 'mrkdwn'
+        }
+    }
+    json = jsonify(
+        response_type='in_channel',
+        blocks=[ blocks ],
+    )
+    logger.info(f'Slack logs: {json}')
+    return json
 
 # Return ACS door status
 def get_acs_door_status():
@@ -340,7 +356,37 @@ def handle_camctl(request, command):
             text="Camctl action '%s' queued" % action)
     return jsonify(
         response_type='in_channel',
-        text="Camctl action '%s' not supported" % action
+        text="Camctl action '%s' not supported" % action)
+
+def handle_lastlog(request):
+    text = request.form['text']
+    logger.info('lastlog: %s' % text)
+    tokens = text.strip().split(' ')
+    if len(tokens) < 1:
+        return jsonify(
+            response_type='in_channel',
+            text='Missing device')
+    device = tokens[0].strip()
+    if len(device) < 1:
+        return jsonify(
+            response_type='in_channel',
+            text='Missing device')
+    pattern = '%s/acs-%s-*.log' % (LOG_DIR, device.lower())
+    logger.info('pattern: %s' % pattern)
+    files = list(filter(os.path.isfile, glob.glob(pattern)))
+    logger.info('files: %s' % files)
+    if len(files) == 0:
+        return jsonify(
+            response_type='in_channel',
+            text=f"No logs for '{device}'")
+    files.sort(key=lambda x: os.path.getmtime(x))
+    lastfile = files[-1]
+    logger.info('lastfile: %s' % lastfile)
+    file = open(lastfile, "r")
+    lst = list(file.readlines())
+    file.close()
+    lastlines = lst[-5:]
+    return format_lines(device, lastlines)
 
 # Handle Slack slash command.
 # /acsaction will call /slash/action, etc.
@@ -356,12 +402,13 @@ def command(command):
         return handle_camstatus()
     if command == 'action' or command == 'acsaction':
         return handle_acsaction(request)
-    elif command == 'camaction':
+    if command == 'camaction':
         return handle_camaction(request, command)
-    elif command == 'camctl':
+    if command == 'camctl':
         return handle_camctl(request, command)
-    else:
-        return 'Unknown command', 200
+    if command == 'lastlog' or command == 'acslastlog':
+        return handle_lastlog(request)
+    return 'Unknown command', 200
 
 # /acsquery: Called by ACS to see if an action is pending
 @app.route('/acsquery', methods=['POST'])
