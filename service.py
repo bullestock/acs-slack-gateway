@@ -367,6 +367,14 @@ def handle_lastlog(request):
             response_type='in_channel',
             text='Missing device')
     device = tokens[0].strip()
+    lines = 5
+    if len(tokens) > 1:
+        try:
+            lines = int(tokens[1])
+        except ValueError:
+        return jsonify(
+            response_type='in_channel',
+            text='Invalid number of lines')
     if len(device) < 1:
         return jsonify(
             response_type='in_channel',
@@ -385,7 +393,7 @@ def handle_lastlog(request):
     file = open(lastfile, "r")
     lst = list(file.readlines())
     file.close()
-    lastlines = lst[-5:]
+    lastlines = lst[-lines:]
     return format_lines(device, lastlines)
 
 # Handle Slack slash command.
