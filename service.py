@@ -367,18 +367,18 @@ def handle_lastlog(request):
             response_type='in_channel',
             text='Missing device')
     device = tokens[0].strip()
+    if len(device) < 1:
+        return jsonify(
+            response_type='in_channel',
+            text='Missing device')
     lines = 5
     if len(tokens) > 1:
         try:
             lines = int(tokens[1])
         except ValueError:
-        return jsonify(
-            response_type='in_channel',
-            text='Invalid number of lines')
-    if len(device) < 1:
-        return jsonify(
-            response_type='in_channel',
-            text='Missing device')
+            return jsonify(
+                response_type='in_channel',
+                text='Invalid number of lines')
     pattern = '%s/acs-%s-*.log' % (LOG_DIR, device.lower())
     logger.info('pattern: %s' % pattern)
     files = list(filter(os.path.isfile, glob.glob(pattern)))
