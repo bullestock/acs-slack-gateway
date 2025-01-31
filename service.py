@@ -23,6 +23,7 @@ FIRMWARE_DIR='/opt/service/persistent/firmware'
 
 DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'setdesc']
 GLOBAL_ACTIONS = ['open', 'close']
+CAMCTL_ACTIONS = ['on', 'off', 'reboot']
 
 for dir in [ ACS_STATUS_DIR, CAM_STATUS_DIR, LOG_DIR ]:
     if not os.path.isdir(dir):
@@ -276,6 +277,12 @@ def handle_acsaction(request):
             text='Missing action')
     if len(tokens) < 2:
         action = tokens[0]
+        if action == 'help':
+            return jsonify(
+                response_type='in_channel',
+                text=('This command controls the ACS. See also /camctl. Available actions:\n' +
+                      ', '.join(DEVICE_ACTIONS) + ' <device>\n' +
+                      ', '.join(GLOBAL_ACTIONS)))
         if action in DEVICE_ACTIONS:
             return jsonify(
                 response_type='in_channel',
@@ -348,7 +355,12 @@ def handle_camctl(request, command):
             text='Invalid parameters for camctl'
         )
     action = params[0]
-    if action in ['on', 'off', 'reboot']:
+    if action == 'help':
+        return jsonify(
+            response_type='in_channel',
+            text=('This command controls camera power. See also /acsaction. Available actions:\n' +
+                  ', '.join(CAMCTL_ACTIONS)))
+    if action in CAMCTL_ACTIONS:
         global global_camctl_action
         global_camctl_action = action
         return jsonify(
