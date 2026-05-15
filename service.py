@@ -137,6 +137,7 @@ def is_camctl_request_valid(request):
     except Exception as e:
         logger.info('Exception: %s' % e)
         return False
+    logger.info(f"is_camctl_request_valid: {is_token_valid}")
     return is_token_valid
 
 def get_immediate_subdirectories(a_dir):
@@ -573,6 +574,7 @@ def get_camera(instance):
 def get_camctl():
     if not is_camctl_request_valid(request):
         logger.info('Invalid camctl request. Aborting')
+        logger.info(request.headers)
         return abort(403)
     logger.info('Camctl args %s' % request.args)
     status = {}
