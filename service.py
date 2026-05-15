@@ -131,7 +131,9 @@ def is_camera_request_valid(request):
 def is_camctl_request_valid(request):
     try:
         auth = request.headers.get('Authentication')
-        is_token_valid = (auth == ('Bearer %s' % os.environ['CAMCTL_VERIFICATION_TOKEN'])) or (auth == ('Bearer %s' % os.environ['ACS_VERIFICATION_TOKEN'])):
+        cam_auth = 'Bearer %s' % os.environ['CAMCTL_VERIFICATION_TOKEN']
+        acs_auth = 'Bearer %s' % os.environ['ACS_VERIFICATION_TOKEN']
+        is_token_valid = (auth == cam_auth) or (auth == acs_auth)
         if not is_token_valid:
             logger.info('Bad camctl token: %s' % auth)
     except Exception as e:
