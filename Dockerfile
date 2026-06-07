@@ -1,14 +1,14 @@
-FROM python:3.10-bullseye
+FROM python:3.14-bookworm
 
 ARG GIT_COMMIT=unknown
 LABEL git-commit=$GIT_COMMIT
 
 COPY ./service.py /opt/service/
-COPY ./requirements.txt /opt/service/
+COPY ./pyproject.toml /opt/service/
 WORKDIR /opt/service
 
-RUN pip install -r requirements.txt
 RUN mkdir /opt/service/monitoring
+RUN uv sync && . ./venv/bin/activate
 
 EXPOSE 5000
 
