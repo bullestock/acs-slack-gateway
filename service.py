@@ -7,16 +7,16 @@ import glob
 import json
 import logging
 import os
+import paho.mqtt.client as paho
+from paho import mqtt
 import requests
 import uuid
 
 SLAGIOS_CAM_HEARTBEAT_FILE='/opt/service/monitoring/cam-heartbeat'
 SLAGIOS_CAMCTL_HEARTBEAT_FILE='/opt/service/monitoring/camctl-heartbeat'
 STATUS_DIR='/opt/service/persistent'
-ACS_STATUS_DIR=STATUS_DIR + '/acs'
 CAM_STATUS_DIR=STATUS_DIR + '/cams'
 CAMCTL_STATUS_FILE=STATUS_DIR + '/camctl.json'
-ACS_STATUS_FILE_TEMPLATE=STATUS_DIR + '/acs-%s'
 ACS_CRASH_DUMP_FILE='/opt/service/monitoring/acs-crashdump'
 LOG_DIR='/opt/service/persistent/logs'
 FIRMWARE_DIR='/opt/service/persistent/firmware'
@@ -25,7 +25,9 @@ DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'setdesc']
 GLOBAL_ACTIONS = ['open', 'close']
 CAMCTL_ACTIONS = ['on', 'off', 'reboot']
 
-for dir in [ ACS_STATUS_DIR, CAM_STATUS_DIR, LOG_DIR ]:
+TOPIC_ROOT = "hal9k/acs/status"
+
+for dir in [ CAM_STATUS_DIR, LOG_DIR ]:
     if not os.path.isdir(dir):
         os.mkdir(dir)
 
@@ -63,6 +65,7 @@ def slack_write(msg):
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+app.status = {}
 
 logger = logging.getLogger('werkzeug')
 handler = logging.FileHandler('acsgw.log')
@@ -148,17 +151,17 @@ def get_immediate_subdirectories(a_dir):
 
 # Return ACS status set by most recent call to /acsstatus
 def get_acs_status():
-    dirs = get_immediate_subdirectories(ACS_STATUS_DIR)
-    status = ''
-    for dir in dirs:
-        dir_path = os.path.join(ACS_STATUS_DIR, dir)
-        with open(os.path.join(dir_path, 'status'), 'r', encoding = 'utf-8') as f:
-            j = json.loads(f.read())
-            logger.info(f'Stored {dir} status: {j}')
-            status += f'*{dir.capitalize()}*:\n'
-            for key in j:
-                status += '    %s: _%s_\n' % (key.replace('_', ' ').capitalize(),
-                                              str(j[key]).replace('_', ' ').capitalize())
+    status = ""
+    for device in app.status:
+        status += f"*{device.capitalize()}*:\n"
+        dev_status = app.status[device]
+        ts = dev_status["timestamp"]
+        status += f"    Last update: _{ts}_\n"
+        data = dev_status["data"]
+        for key in data:
+            status += '    %s: _%s_\n' % (key.replace('_', ' ').capitalize(),
+                                          str(data[key]).replace('_', ' ').capitalize())
+
     return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
 
 def format_lines(device, lines):
@@ -175,30 +178,6 @@ def format_lines(device, lines):
     )
     logger.info(f'Slack logs: {json}')
     return json
-
-# Return ACS door status
-def get_acs_door_status():
-    dirs = get_immediate_subdirectories(ACS_STATUS_DIR)
-    doors = {}
-    for dir in dirs:
-        dir_path = os.path.join(ACS_STATUS_DIR, dir)
-        with open(os.path.join(dir_path, 'status'), 'r', encoding = 'utf-8') as f:
-            j = json.loads(f.read())
-            if 'door' in j:
-                doors[dir] = j['door']
-            if 'space' in j:
-                space_status = j['space']
-                if space_status == 'open':
-                    doors[dir] = 'unlocked'
-                if dir == 'main':
-                    global global_space_open
-                    global global_space_open_lastchange
-                    old_open = global_space_open
-                    global_space_open = space_status == 'open'
-                    if global_space_open != old_open:
-                        global_space_open_lastchange = int((datetime.datetime.utcnow() -
-                                                            datetime.datetime(1970, 1, 1)).total_seconds())
-    return doors
 
 # Return camera status set by most recent call to /camstatus
 def get_camera_status_dict():
@@ -253,7 +232,10 @@ def get_camera_status():
     return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
 
 def handle_acsstatus():
-    status = get_acs_status()
+    try:
+        status = get_acs_status()
+    except:
+        status = "Internal error"
     json = jsonify(
         response_type='in_channel',
         blocks=[ status ],
@@ -461,59 +443,6 @@ def query():
     logger.info('Ignoring /acsquery from other device')
     return jsonify(action=None, allow_open=global_allow_open)
 
-# /acsstatus: Called by ACS to set status
-@app.route('/acsstatus', methods=['POST'])
-def status():
-    #logger.info('acsstatus: %s' % request.json)
-    if not is_acs_request_valid(request):
-        logger.info('Invalid request. Aborting')
-        return abort(403)
-    status = request.json['status']
-    status['last update'] = datetime.datetime.now().replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
-    logger.info('Storing status: %s' % status)
-    device = None
-    if not 'device' in request.json:
-        logger.info('Missing device in /acsstatus')
-        return '', 403
-    device = request.json['device']
-    device_dir = os.path.join(ACS_STATUS_DIR, device)
-    if not os.path.isdir(device_dir):
-        os.mkdir(device_dir)
-    statusfilename = os.path.join(device_dir, 'status')
-    heartbeatfilename = os.path.join(device_dir, 'heartbeat')
-    with open(statusfilename, 'w', encoding = 'utf-8') as f:
-        f.write(json.dumps(status))
-    with open(heartbeatfilename, 'w', encoding = 'utf-8') as f:
-        f.write('OK\nUpdated|a=0')
-    return '', 200
-
-# /acslog: Called by ACS to store a log entry
-@app.route('/acslog', methods=['POST'])
-def acslog():
-    #logger.info('acslog')
-    logger.info('acslog: %s' % request.json)
-    if not is_acs_request_valid(request):
-        logger.info('Invalid request. Aborting')
-        logger.info('acslog: request %s' % request.json)
-        return abort(403)
-    logger.info('acslog: request %s' % request.json)
-    stamp = request.json['timestamp']
-    text = request.json['text']
-    day = datetime.datetime.now().strftime('%Y-%m-%d-%H')
-    if 'device' in request.json:
-        # Device-specific logging
-        logfilename = '%s/acs-%s-%s.log' % (LOG_DIR, request.json['device'].lower(), day)
-    else:
-        # Legacy
-        logfilename = '%s/acs-%s.log' % (LOG_DIR, day)
-    with open(logfilename, 'a+', encoding = 'utf-8') as f:
-        f.write('%s %s\n' % (stamp, text))
-    # Check for crash dump
-    if 'CORE DUMP START' in text:
-        with open(ACS_CRASH_DUMP_FILE, 'a+', encoding = 'utf-8') as f:
-            f.write('%s\n' % stamp)
-    return '', 200
-
 # /acscamctl: Called by ACS to control camera power
 @app.route('/acscamctl', methods=['POST'])
 def acscamctl():
@@ -607,14 +536,6 @@ def get_camctl():
         f.write('OK\nUpdated|a=0')
     return jsonify(action=action)
 
-# /doorstatus: Get door status
-@app.route('/doorstatus', methods=['POST'])
-def doorstatus():
-    if not is_acs_request_valid(request):
-        logger.info('Invalid doorstatus request. Aborting')
-        return abort(403)
-    return jsonify(get_acs_door_status())
-
 # /spaceapi: SpaceAPI
 @app.route('/spaceapi', methods=['GET'])
 @cross_origin()
@@ -659,7 +580,27 @@ def spaceapi():
     }
     return jsonify(info)
 
+def on_mqtt_message(client, userdata, message):
+    try:
+        data = message.payload.decode("utf-8")
+        data = json.loads(data)
+    except:
+        # Ignore invalid or missing JSON
+        return
+    topic = message.topic[len(TOPIC_ROOT)+1:]
+    topic_parts = topic.split("/")
+    if len(topic_parts) != 1:
+        return
+    device = topic_parts[0]
+    app.status[device] = data
+    
 # Start the server on port 5000
 if __name__ == '__main__':
     WSGIRequestHandler.protocol_version = "HTTP/1.1"
+    client = paho.Client(client_id="", userdata=app, protocol=paho.MQTTv5)
+    client.tls_set()
+    client.connect("mqtt.hal9k.dk", 8883)
+    client.subscribe(f"{TOPIC_ROOT}/#", qos=1)
+    client.on_message = on_mqtt_message
+    client.loop_start()
     app.run(host='0.0.0.0', port=5000)
