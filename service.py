@@ -600,7 +600,6 @@ def on_mqtt_message(client, userdata, message):
 if __name__ == '__main__':
     WSGIRequestHandler.protocol_version = "HTTP/1.1"
     client = paho.Client(client_id="", userdata=app, protocol=paho.MQTTv5)
-    client.tls_set()
     ctx = ssl.create_default_context(cafile=certifi.where())
     client.tls_set_context(ctx)
     client.connect("mqtt.hal9k.dk", 8883)
