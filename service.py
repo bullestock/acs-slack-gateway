@@ -161,8 +161,11 @@ def get_acs_status():
         status += f"    Last update: _{ts}_\n"
         data = dev_status["data"]
         for key in data:
-            status += '    %s: _%s_\n' % (key.replace('_', ' ').capitalize(),
-                                          str(data[key]).replace('_', ' ').capitalize())
+            pretty_key = key.replace('_', ' ').capitalize()
+            pretty_data = str(data[key]).replace('_', ' ')
+            if not pretty_data[0].isdigit():
+                pretty_data = pretty_data.capitalize()
+            status += f"    {pretty_key}: _{pretty_data}_\n"
 
     return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
 
