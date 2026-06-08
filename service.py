@@ -547,7 +547,7 @@ def get_camctl():
 def spaceapi():
     info = {
         "api_compatibility": ["14"],
-        "space": "Halk",
+        "space": "Hal9k",
         "logo": "https://hal9k.dk/wp-content/uploads/2012/10/hal9k_log-sky2.png",
         "url": "https://hal9k.dk",
         "location": {
