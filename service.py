@@ -2,6 +2,7 @@ from flask import Flask, request, abort, jsonify, send_file
 from flask_cors import CORS, cross_origin
 from werkzeug.serving import WSGIRequestHandler
 
+import certifi
 import datetime
 import glob
 import json
@@ -10,6 +11,7 @@ import os
 import paho.mqtt.client as paho
 from paho import mqtt
 import requests
+import ssl
 import uuid
 
 SLAGIOS_CAM_HEARTBEAT_FILE='/opt/service/monitoring/cam-heartbeat'
@@ -599,6 +601,8 @@ if __name__ == '__main__':
     WSGIRequestHandler.protocol_version = "HTTP/1.1"
     client = paho.Client(client_id="", userdata=app, protocol=paho.MQTTv5)
     client.tls_set()
+    ctx = ssl.create_default_context(cafile=certifi.where())
+    client.tls_set_context(ctx)
     client.connect("mqtt.hal9k.dk", 8883)
     client.subscribe(f"{TOPIC_ROOT}/#", qos=1)
     client.on_message = on_mqtt_message
