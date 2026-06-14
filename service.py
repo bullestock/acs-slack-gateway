@@ -155,13 +155,13 @@ def get_immediate_subdirectories(a_dir):
 def get_acs_status():
     status = ""
     for device in app.status:
-        status += f"*{device.capitalize()}*:\n"
         dev_status = app.status[device]
-        ts = dev_status["timestamp"]
-        status += f"    Last update: _{ts}_\n"
         if not "data" in dev_status:
             # Not ACS frontend
             continue
+        status += f"*{device.capitalize()}*:\n"
+        ts = dev_status["timestamp"]
+        status += f"    Last update: _{ts}_\n"
         data = dev_status["data"]
         for key in data:
             pretty_key = key.replace('_', ' ').capitalize()
