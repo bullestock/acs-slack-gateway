@@ -387,19 +387,24 @@ def handle_lastlog(request):
             return jsonify(
                 response_type='in_channel',
                 text='Invalid number of lines')
-    pattern = '%s/acs-%s-*.log' % (LOG_DIR, device.lower())
+    pattern = '%s/acs.*' % LOG_DIR
     logger.info('pattern: %s' % pattern)
     files = list(filter(os.path.isfile, glob.glob(pattern)))
     logger.info('files: %s' % files)
     if len(files) == 0:
         return jsonify(
             response_type='in_channel',
-            text=f"No logs for '{device}'")
+            text=f"No ACS logs!")
     files.sort(key=lambda x: os.path.getmtime(x))
     lastfile = files[-1]
     logger.info('lastfile: %s' % lastfile)
     file = open(lastfile, "r")
-    lst = list(file.readlines())
+    all_lines = list(file.readlines())
+    lst = []
+    for line in all_lines:
+        parts = line.split("|")
+        if parts[1].lower() == device.lower():
+            lst.append(line)
     file.close()
     lastlines = lst[-lines:]
     return format_lines(device, lastlines)
