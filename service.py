@@ -159,6 +159,9 @@ def get_acs_status():
         dev_status = app.status[device]
         ts = dev_status["timestamp"]
         status += f"    Last update: _{ts}_\n"
+        if not "data" in dev_status:
+            # Not ACS frontend
+            continue
         data = dev_status["data"]
         for key in data:
             pretty_key = key.replace('_', ' ').capitalize()
