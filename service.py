@@ -20,7 +20,7 @@ STATUS_DIR='/opt/service/persistent'
 CAM_STATUS_DIR=STATUS_DIR + '/cams'
 CAMCTL_STATUS_FILE=STATUS_DIR + '/camctl.json'
 ACS_CRASH_DUMP_FILE='/opt/service/monitoring/acs-crashdump'
-LOG_DIR='/opt/service/persistent/logs'
+LOG_DIR='/opt/service/logs'
 FIRMWARE_DIR='/opt/service/persistent/firmware'
 
 DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'setdesc']
