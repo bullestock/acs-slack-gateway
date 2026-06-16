@@ -404,7 +404,7 @@ def handle_lastlog(request):
     for line in all_lines:
         parts = line.split("|")
         if parts[1].lower() == device.lower():
-            lst.append(line)
+            lst.append(f"{parts[0]} {parts[2]}")
     file.close()
     lastlines = lst[-lines:]
     return format_lines(device, lastlines)
