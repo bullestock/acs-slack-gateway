@@ -14,13 +14,9 @@ import requests
 import ssl
 import uuid
 
-SLAGIOS_CAM_HEARTBEAT_FILE='/opt/service/monitoring/cam-heartbeat'
-SLAGIOS_CAMCTL_HEARTBEAT_FILE='/opt/service/monitoring/camctl-heartbeat'
-STATUS_DIR='/opt/service/persistent'
-CAM_STATUS_DIR=STATUS_DIR + '/cams'
-CAMCTL_STATUS_FILE=STATUS_DIR + '/camctl.json'
-ACS_CRASH_DUMP_FILE='/opt/service/monitoring/acs-crashdump'
+# Contains log files written by acsmqttlogger
 LOG_DIR='/opt/service/logs'
+# Mounted at /srv/acsgw/firmware
 FIRMWARE_DIR='/opt/service/persistent/firmware'
 
 DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'setdesc']
@@ -28,18 +24,6 @@ GLOBAL_ACTIONS = ['open', 'close']
 CAMCTL_ACTIONS = ['on', 'off', 'reboot']
 
 TOPIC_ROOT = "hal9k/acs/status"
-
-for dir in [ CAM_STATUS_DIR, LOG_DIR ]:
-    if not os.path.isdir(dir):
-        os.mkdir(dir)
-
-if not os.path.isfile(SLAGIOS_CAM_HEARTBEAT_FILE):
-    with open(SLAGIOS_CAM_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
-        f.write("OK\nStarting|a=0")
-
-if not os.path.isfile(SLAGIOS_CAMCTL_HEARTBEAT_FILE):
-    with open(SLAGIOS_CAMCTL_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
-        f.write("OK\nStarting|a=0")
 
 global_acs_device = None
 global_acs_action = None
@@ -123,15 +107,6 @@ def is_acs_request_valid(request):
     logger.info('is_acs_request_valid: No?')
     return False
 
-# Validate token in /camera
-def is_camera_request_valid(request):
-    try:
-        is_token_valid = request.headers.get('Authentication') == ('Bearer %s' % os.environ['CAMERA_VERIFICATION_TOKEN'])
-    except Exception as e:
-        logger.info('Exception: %s' % e)
-        return False
-    return is_token_valid
-
 # Validate token in /camctl
 def is_camctl_request_valid(request):
     try:
@@ -147,11 +122,7 @@ def is_camctl_request_valid(request):
     logger.info(f"is_camctl_request_valid: {is_token_valid}")
     return is_token_valid
 
-def get_immediate_subdirectories(a_dir):
-    return [name for name in os.listdir(a_dir)
-            if os.path.isdir(os.path.join(a_dir, name))]
-
-# Return ACS status set by most recent call to /acsstatus
+# Return ACS status set via MQTT
 def get_acs_status():
     status = ""
     for device in app.status:
@@ -187,26 +158,22 @@ def format_lines(device, lines):
     logger.info(f'Slack logs: {json}')
     return json
 
-# Return camera status set by most recent call to /camstatus
+# Return camera status set via MQTT
 def get_camera_status_dict():
     cam_status = {}
-    dir = os.fsencode(CAM_STATUS_DIR)
-    for file in os.listdir(dir):
-        filename = os.fsdecode(file)
-        path = '%s/%s' % (CAM_STATUS_DIR, filename)
-        if filename.isdigit():
-            with open(path, 'r', encoding = 'utf-8') as f:
-                try:
-                    j = json.loads(f.read())
-                    cam_status[filename] = j
-                except Exception as e:
-                    logger.info('Exception reading %s: %s' % (path, e))
-    with open(CAMCTL_STATUS_FILE, 'r', encoding = 'utf-8') as f:
-        try:
-            j = json.loads(f.read())
-            cam_status['Power'] = j
-        except Exception as e:
-            logger.info('Exception reading %s: %s' % (path, e))
+    # TODO
+    # cam_status['Power'] = j
+    for device in app.status:
+        dev_status = app.status[device]
+        if "data" in dev_status:
+            # ACS frontend
+            continue
+        logger.info(f'cam: {dev_status}')
+        ts = dev_status["timestamp"]
+        status = f"H: {ts}"
+        lp = dev_status["last_picture"]
+        status += f", LP: {lp}"
+        cam_status[device] = status
     return cam_status
 
 def get_camera_status():
@@ -472,47 +439,6 @@ def acscamctl():
 def firmware(image):
     return send_file(f'{FIRMWARE_DIR}/{image}.bin')
 
-# Get camera parameters
-@app.route('/camera/<instance>', methods=['GET'])
-def get_camera(instance):
-    if not is_camera_request_valid(request):
-        logger.info('Invalid camera request. Aborting')
-        return abort(403)
-    if not instance.isdigit():
-        logger.info('Invalid camera instance. Aborting')
-        return abort(400)
-    instance = int(instance)
-    logger.info('Camera %d parameter query, args %s' % (instance, request.args))
-    status = {}
-    cam_status = get_camera_status_dict()
-    if instance in cam_status:
-        status = cam_status[instance]
-    if request.args.get('active'):
-        status['Active'] = request.args.get('active')
-    if request.args.get('continuous'):
-        status['Continuous mode'] = request.args.get('continuous')
-    if request.args.get('last_pic'):
-        status['Last picture'] = request.args.get('last_pic')
-    if request.args.get('version'):
-        status['Version'] = request.args.get('version')
-    action = None
-    if instance in global_camera_action:
-        action = global_camera_action[instance]
-        global_camera_action[instance] = None
-    status['Heartbeat'] = datetime.datetime.now().replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
-    with open('%s/%d' % (CAM_STATUS_DIR, instance), 'w', encoding = 'utf-8') as f:
-        f.write(json.dumps(status))
-    keepalive = int(os.environ['CAMERA_DEFAULT_KEEPALIVE'])
-    pixel_threshold = int(os.environ['CAMERA_DEFAULT_PIXEL_THRESHOLD'])
-    percent_threshold = int(os.environ['CAMERA_DEFAULT_PERCENT_THRESHOLD'])
-    logger.info('Camera defaults: %d, %d, %d' % (keepalive, pixel_threshold, percent_threshold))
-    with open(SLAGIOS_CAM_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
-        f.write('OK\nUpdated|a=0')
-    return jsonify(keepalive=keepalive,
-                   pixel_threshold=pixel_threshold,
-                   percent_threshold=percent_threshold,
-                   action=action)
-
 # Get camctl parameters, store status
 @app.route('/camctl', methods=['GET'])
 def get_camctl():
@@ -545,8 +471,6 @@ def get_camctl():
     status['Heartbeat'] = datetime.datetime.now().replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
     with open(CAMCTL_STATUS_FILE, 'w', encoding = 'utf-8') as f:
         f.write(json.dumps(status))
-    with open(SLAGIOS_CAMCTL_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
-        f.write('OK\nUpdated|a=0')
     return jsonify(action=action)
 
 # /spaceapi: SpaceAPI
