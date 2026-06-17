@@ -32,6 +32,7 @@ global_allow_open = None
 global_camera_action = {}
 global_camctl_action = {}
 global_acs_camaction = None
+global_camctl_status = None
 global_last_cameras_on = None
 global_space_open = False
 global_space_open_lastchange = 0 # UNIX timestamp
@@ -140,7 +141,8 @@ def get_acs_status():
             if not pretty_data[0].isdigit():
                 pretty_data = pretty_data.capitalize()
             status += f"    {pretty_key}: _{pretty_data}_\n"
-
+    global global_camctl_status
+    status += f"*Power*: {global_camctl_status}"
     return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
 
 def format_lines(device, lines):
@@ -446,16 +448,16 @@ def get_camctl():
         logger.info('Invalid camctl request. Aborting')
         return abort(403)
     logger.info('Camctl args %s' % request.args)
-    status = {}
+    status = ""
     cameras_on = False
     if request.args.get('cameras'):
         cameras_on = request.args.get('cameras')
-        status['Cameras on'] = cameras_on
+        status += f"Cameras on: {cameras_on} "
     if request.args.get('estop'):
         estop_on = request.args.get('estop')
-        status['E-stop on'] = estop_on
+        status += f"E-stop on: {estop_on} "
     if request.args.get('version'):
-        status['Version'] = request.args.get('version')
+        status += f"V: {request.args.get('version')} "
     global global_last_cameras_on
     if cameras_on != global_last_cameras_on:
         slack_write(':camera: Cameras are %s' % ('on' if cameras_on == '1' else 'off'))
@@ -468,9 +470,9 @@ def get_camctl():
         if global_acs_camaction:
             action = global_acs_camaction
             global_acs_camaction = None
-    status['Heartbeat'] = datetime.datetime.now().replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
-    with open(CAMCTL_STATUS_FILE, 'w', encoding = 'utf-8') as f:
-        f.write(json.dumps(status))
+    status += f" H: {datetime.datetime.now().replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')}"
+    global global_camctl_status
+    global_camctl_status = status
     return jsonify(action=action)
 
 # /spaceapi: SpaceAPI
