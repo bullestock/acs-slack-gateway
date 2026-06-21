@@ -444,16 +444,16 @@ def get_camctl():
         logger.info('Invalid camctl request. Aborting')
         return abort(403)
     logger.info('Camctl args %s' % request.args)
-    status = ""
+    status = []
     cameras_on = False
     if request.args.get('cameras'):
         cameras_on = request.args.get('cameras')
-        status += f"Cameras on: {cameras_on} "
+        status.append(f"Cameras on: {cameras_on}")
     if request.args.get('estop'):
         estop_on = request.args.get('estop')
-        status += f"E-stop on: {estop_on} "
+        status.append(f"E-stop on: {estop_on}")
     if request.args.get('version'):
-        status += f"V: {request.args.get('version')} "
+        status.append(f"V: {request.args.get('version')}")
     global global_last_cameras_on
     if cameras_on != global_last_cameras_on:
         slack_write(':camera: Cameras are %s' % ('on' if cameras_on == '1' else 'off'))
@@ -466,9 +466,9 @@ def get_camctl():
         if global_acs_camaction:
             action = global_acs_camaction
             global_acs_camaction = None
-    status += f" H: {datetime.datetime.now().replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')}"
+    status.append(" H: {datetime.datetime.now().replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')}")
     global global_camctl_status
-    global_camctl_status = status
+    global_camctl_status = ", ".join(status)
     return jsonify(action=action)
 
 # /spaceapi: SpaceAPI
