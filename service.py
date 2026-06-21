@@ -141,8 +141,6 @@ def get_acs_status():
             if not pretty_data[0].isdigit():
                 pretty_data = pretty_data.capitalize()
             status += f"    {pretty_key}: _{pretty_data}_\n"
-    global global_camctl_status
-    status += f"*Power*: {global_camctl_status}"
     return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
 
 def format_lines(device, lines):
@@ -163,8 +161,6 @@ def format_lines(device, lines):
 # Return camera status set via MQTT
 def get_camera_status_dict():
     cam_status = {}
-    # TODO
-    # cam_status['Power'] = j
     for device in app.status:
         if not device.startswith("cam"):
             continue
@@ -204,6 +200,8 @@ def get_camera_status():
                     subkey = 'H'
                 substatus += '%s: %s' % (subkey, subvalue)
         status = status + substatus
+    global global_camctl_status
+    status += f"\n*Power*: {global_camctl_status}"
     return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
 
 def handle_acsstatus():
