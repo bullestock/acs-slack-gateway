@@ -166,22 +166,21 @@ def get_camera_status_dict():
     # TODO
     # cam_status['Power'] = j
     for device in app.status:
-        dev_status = app.status[device]
-        if "data" in dev_status:
-            # ACS frontend
+        if not device.startswith("cam"):
             continue
-        logger.info(f'cam: {dev_status}')
+        dev_status = app.status[device]
         ts = dev_status["timestamp"]
         status = f"H: {ts}"
         lp = dev_status["last_picture"]
         status += f", LP: {lp}"
-        cam_status[device] = status
+        cam_status[int(device[3:])] = status
     return cam_status
 
 def get_camera_status():
     cam_status = get_camera_status_dict()
     if not cam_status:
         return 'No status'
+    logger.info(f"cam_status {cam_status}")
     status = ''
     for key, value in sorted(cam_status.items()):
         if len(status) > 0:
