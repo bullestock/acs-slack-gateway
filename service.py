@@ -170,9 +170,8 @@ def get_camera_status_dict():
             continue
         dev_status = app.status[device]
         ts = dev_status["timestamp"]
-        status = f"H: {ts}"
         lp = dev_status["last_picture"]
-        status += f", LP: {lp}"
+        status = { "H": ts, "LP": lp }
         cam_status[int(device[3:])] = status
     return cam_status
 
@@ -185,7 +184,7 @@ def get_camera_status():
     for key, value in sorted(cam_status.items()):
         if len(status) > 0:
             status = status + '\n'
-        status = status + '*%s:* ' % key
+        status = status + '*%02:* ' % key
         substatus = ''
         istatus = value
         for subkey in istatus:
