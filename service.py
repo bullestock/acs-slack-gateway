@@ -184,7 +184,7 @@ def get_camera_status():
     for key, value in sorted(cam_status.items()):
         if len(status) > 0:
             status = status + '\n'
-        status = status + '*%02:* ' % key
+        status = status + '*%02d:* ' % key
         substatus = ''
         istatus = value
         for subkey in istatus:
