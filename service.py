@@ -466,7 +466,7 @@ def get_camctl():
         if global_acs_camaction:
             action = global_acs_camaction
             global_acs_camaction = None
-    status.append(" H: {datetime.datetime.now().replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')}")
+    status.append(f" H: {datetime.datetime.now().replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')}")
     global global_camctl_status
     global_camctl_status = ", ".join(status)
     return jsonify(action=action)
