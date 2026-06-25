@@ -167,7 +167,8 @@ def get_camera_status_dict():
         dev_status = app.status[device]
         ts = dev_status["timestamp"]
         lp = dev_status["last_picture"]
-        status = { "H": ts, "LP": lp }
+        ver = dev_status["version"]
+        status = { "V:" ver, "H": ts, "LP": lp }
         cam_status[int(device[3:])] = status
     return cam_status
 
@@ -450,7 +451,7 @@ def get_camctl():
         cameras_on = request.args.get('cameras')
         status.append(f"Cameras on: {cameras_on}")
     if request.args.get('estop'):
-        estop_on = request.args.get('estop')
+        estop_on = .args.get('estop')
         status.append(f"E-stop on: {estop_on}")
     if request.args.get('version'):
         status.append(f"V: {request.args.get('version')}")
