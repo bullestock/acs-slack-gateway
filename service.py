@@ -168,7 +168,7 @@ def get_camera_status_dict():
         ts = dev_status["timestamp"]
         lp = dev_status["last_picture"]
         ver = dev_status["version"]
-        status = { "V:" ver, "H": ts, "LP": lp }
+        status = { "V": ver, "H": ts, "LP": lp }
         cam_status[int(device[3:])] = status
     return cam_status
 
@@ -191,14 +191,6 @@ def get_camera_status():
             if subkey.lower() == 'active':
                 substatus += 'Active' if subvalue == '1' else 'Inactive'
             else:
-                if subkey.lower() == 'continuous mode':
-                    subkey = 'CM'
-                elif subkey.lower() == 'last picture':
-                    subkey = 'LP'
-                elif subkey.lower() == 'version':
-                    subkey = 'V'
-                elif subkey.lower() == 'heartbeat':
-                    subkey = 'H'
                 substatus += '%s: %s' % (subkey, subvalue)
         status = status + substatus
     global global_camctl_status
@@ -451,7 +443,7 @@ def get_camctl():
         cameras_on = request.args.get('cameras')
         status.append(f"Cameras on: {cameras_on}")
     if request.args.get('estop'):
-        estop_on = .args.get('estop')
+        estop_on = request.args.get('estop')
         status.append(f"E-stop on: {estop_on}")
     if request.args.get('version'):
         status.append(f"V: {request.args.get('version')}")
