@@ -14,9 +14,13 @@ import requests
 import ssl
 import uuid
 
-# Contains log files written by acsmqttlogger
-LOG_DIR='/opt/service/logs'
-# Mounted at /srv/acsgw/firmware
+SLAGIOS_CAM_HEARTBEAT_FILE='/opt/service/monitoring/cam-heartbeat'
+SLAGIOS_CAMCTL_HEARTBEAT_FILE='/opt/service/monitoring/camctl-heartbeat'
+STATUS_DIR='/opt/service/persistent'
+CAM_STATUS_DIR=STATUS_DIR + '/cams'
+CAMCTL_STATUS_FILE=STATUS_DIR + '/camctl.json'
+ACS_CRASH_DUMP_FILE='/opt/service/monitoring/acs-crashdump'
+LOG_DIR='/opt/service/persistent/logs'
 FIRMWARE_DIR='/opt/service/persistent/firmware'
 
 DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'setdesc']
@@ -25,6 +29,18 @@ CAMCTL_ACTIONS = ['on', 'off', 'reboot']
 
 TOPIC_ROOT = "hal9k/acs/status"
 
+for dir in [ CAM_STATUS_DIR, LOG_DIR ]:
+    if not os.path.isdir(dir):
+        os.mkdir(dir)
+
+if not os.path.isfile(SLAGIOS_CAM_HEARTBEAT_FILE):
+    with open(SLAGIOS_CAM_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
+        f.write("OK\nStarting|a=0")
+
+if not os.path.isfile(SLAGIOS_CAMCTL_HEARTBEAT_FILE):
+    with open(SLAGIOS_CAMCTL_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
+        f.write("OK\nStarting|a=0")
+
 global_acs_device = None
 global_acs_action = None
 global_acs_action_arg = None
@@ -32,7 +48,6 @@ global_allow_open = None
 global_camera_action = {}
 global_camctl_action = {}
 global_acs_camaction = None
-global_camctl_status = None
 global_last_cameras_on = None
 global_space_open = False
 global_space_open_lastchange = 0 # UNIX timestamp
@@ -108,6 +123,15 @@ def is_acs_request_valid(request):
     logger.info('is_acs_request_valid: No?')
     return False
 
+# Validate token in /camera
+def is_camera_request_valid(request):
+    try:
+        is_token_valid = request.headers.get('Authentication') == ('Bearer %s' % os.environ['CAMERA_VERIFICATION_TOKEN'])
+    except Exception as e:
+        logger.info('Exception: %s' % e)
+        return False
+    return is_token_valid
+
 # Validate token in /camctl
 def is_camctl_request_valid(request):
     try:
@@ -123,17 +147,21 @@ def is_camctl_request_valid(request):
     logger.info(f"is_camctl_request_valid: {is_token_valid}")
     return is_token_valid
 
-# Return ACS status set via MQTT
+def get_immediate_subdirectories(a_dir):
+    return [name for name in os.listdir(a_dir)
+            if os.path.isdir(os.path.join(a_dir, name))]
+
+# Return ACS status set by most recent call to /acsstatus
 def get_acs_status():
     status = ""
     for device in app.status:
+        status += f"*{device.capitalize()}*:\n"
         dev_status = app.status[device]
+        ts = dev_status["timestamp"]
+        status += f"    Last update: _{ts}_\n"
         if not "data" in dev_status:
             # Not ACS frontend
             continue
-        status += f"*{device.capitalize()}*:\n"
-        ts = dev_status["timestamp"]
-        status += f"    Last update: _{ts}_\n"
         data = dev_status["data"]
         for key in data:
             pretty_key = key.replace('_', ' ').capitalize()
@@ -141,6 +169,7 @@ def get_acs_status():
             if not pretty_data[0].isdigit():
                 pretty_data = pretty_data.capitalize()
             status += f"    {pretty_key}: _{pretty_data}_\n"
+
     return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
 
 def format_lines(device, lines):
@@ -158,40 +187,37 @@ def format_lines(device, lines):
     logger.info(f'Slack logs: {json}')
     return json
 
-# Return camera status set via MQTT
+# Return camera status set by most recent call to /camstatus
 def get_camera_status_dict():
     cam_status = {}
-    cutoff_time = datetime.datetime.now() - datetime.timedelta(days=3)
-    for device in app.status:
-        if not device.startswith("cam"):
-            continue
-        dev_status = app.status[device]
-        ts = dev_status["timestamp"]
-        # Parse ISO8601 timestamp and skip if older than 3 days
+    dir = os.fsencode(CAM_STATUS_DIR)
+    for file in os.listdir(dir):
+        filename = os.fsdecode(file)
+        path = '%s/%s' % (CAM_STATUS_DIR, filename)
+        if filename.isdigit():
+            with open(path, 'r', encoding = 'utf-8') as f:
+                try:
+                    j = json.loads(f.read())
+                    cam_status[filename] = j
+                except Exception as e:
+                    logger.info('Exception reading %s: %s' % (path, e))
+    with open(CAMCTL_STATUS_FILE, 'r', encoding = 'utf-8') as f:
         try:
-            ts_datetime = datetime.datetime.fromisoformat(ts)
-            if ts_datetime < cutoff_time:
-                continue
-        except (ValueError, TypeError) as e:
-            # Skip entries with invalid timestamps
-            logger.warning(f"Invalid timestamp for {device}: {ts} - {e}")
-            continue
-        lp = dev_status["last_picture"]
-        ver = dev_status["version"]
-        status = { "V": ver, "H": ts, "LP": lp }
-        cam_status[int(device[3:])] = status
+            j = json.loads(f.read())
+            cam_status['Power'] = j
+        except Exception as e:
+            logger.info('Exception reading %s: %s' % (path, e))
     return cam_status
 
 def get_camera_status():
     cam_status = get_camera_status_dict()
     if not cam_status:
         return 'No status'
-    logger.info(f"cam_status {cam_status}")
     status = ''
     for key, value in sorted(cam_status.items()):
         if len(status) > 0:
             status = status + '\n'
-        status = status + '*%02d:* ' % key
+        status = status + '*%s:* ' % key
         substatus = ''
         istatus = value
         for subkey in istatus:
@@ -201,10 +227,16 @@ def get_camera_status():
             if subkey.lower() == 'active':
                 substatus += 'Active' if subvalue == '1' else 'Inactive'
             else:
+                if subkey.lower() == 'continuous mode':
+                    subkey = 'CM'
+                elif subkey.lower() == 'last picture':
+                    subkey = 'LP'
+                elif subkey.lower() == 'version':
+                    subkey = 'V'
+                elif subkey.lower() == 'heartbeat':
+                    subkey = 'H'
                 substatus += '%s: %s' % (subkey, subvalue)
         status = status + substatus
-    global global_camctl_status
-    status += f"\n*Power*: {global_camctl_status}"
     return { 'type': 'section', 'text': { 'text': status, 'type': 'mrkdwn' } }
 
 def handle_acsstatus():
@@ -371,8 +403,8 @@ def handle_lastlog(request):
     lst = []
     for line in all_lines:
         parts = line.split("|")
-        if parts[1].lower() == device.lower():
-            lst.append(f"{parts[0]} {parts[2]}")
+        
+        lst.append(line)
     file.close()
     lastlines = lst[-lines:]
     return format_lines(device, lastlines)
@@ -440,6 +472,47 @@ def acscamctl():
 def firmware(image):
     return send_file(f'{FIRMWARE_DIR}/{image}.bin')
 
+# Get camera parameters
+@app.route('/camera/<instance>', methods=['GET'])
+def get_camera(instance):
+    if not is_camera_request_valid(request):
+        logger.info('Invalid camera request. Aborting')
+        return abort(403)
+    if not instance.isdigit():
+        logger.info('Invalid camera instance. Aborting')
+        return abort(400)
+    instance = int(instance)
+    logger.info('Camera %d parameter query, args %s' % (instance, request.args))
+    status = {}
+    cam_status = get_camera_status_dict()
+    if instance in cam_status:
+        status = cam_status[instance]
+    if request.args.get('active'):
+        status['Active'] = request.args.get('active')
+    if request.args.get('continuous'):
+        status['Continuous mode'] = request.args.get('continuous')
+    if request.args.get('last_pic'):
+        status['Last picture'] = request.args.get('last_pic')
+    if request.args.get('version'):
+        status['Version'] = request.args.get('version')
+    action = None
+    if instance in global_camera_action:
+        action = global_camera_action[instance]
+        global_camera_action[instance] = None
+    status['Heartbeat'] = datetime.datetime.now().replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
+    with open('%s/%d' % (CAM_STATUS_DIR, instance), 'w', encoding = 'utf-8') as f:
+        f.write(json.dumps(status))
+    keepalive = int(os.environ['CAMERA_DEFAULT_KEEPALIVE'])
+    pixel_threshold = int(os.environ['CAMERA_DEFAULT_PIXEL_THRESHOLD'])
+    percent_threshold = int(os.environ['CAMERA_DEFAULT_PERCENT_THRESHOLD'])
+    logger.info('Camera defaults: %d, %d, %d' % (keepalive, pixel_threshold, percent_threshold))
+    with open(SLAGIOS_CAM_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
+        f.write('OK\nUpdated|a=0')
+    return jsonify(keepalive=keepalive,
+                   pixel_threshold=pixel_threshold,
+                   percent_threshold=percent_threshold,
+                   action=action)
+
 # Get camctl parameters, store status
 @app.route('/camctl', methods=['GET'])
 def get_camctl():
@@ -447,16 +520,16 @@ def get_camctl():
         logger.info('Invalid camctl request. Aborting')
         return abort(403)
     logger.info('Camctl args %s' % request.args)
-    status = []
+    status = {}
     cameras_on = False
     if request.args.get('cameras'):
         cameras_on = request.args.get('cameras')
-        status.append(f"Cameras on: {cameras_on}")
+        status['Cameras on'] = cameras_on
     if request.args.get('estop'):
         estop_on = request.args.get('estop')
-        status.append(f"E-stop on: {estop_on}")
+        status['E-stop on'] = estop_on
     if request.args.get('version'):
-        status.append(f"V: {request.args.get('version')}")
+        status['Version'] = request.args.get('version')
     global global_last_cameras_on
     if cameras_on != global_last_cameras_on:
         slack_write(':camera: Cameras are %s' % ('on' if cameras_on == '1' else 'off'))
@@ -469,9 +542,11 @@ def get_camctl():
         if global_acs_camaction:
             action = global_acs_camaction
             global_acs_camaction = None
-    status.append(f" H: {datetime.datetime.now().replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')}")
-    global global_camctl_status
-    global_camctl_status = ", ".join(status)
+    status['Heartbeat'] = datetime.datetime.now().replace(microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
+    with open(CAMCTL_STATUS_FILE, 'w', encoding = 'utf-8') as f:
+        f.write(json.dumps(status))
+    with open(SLAGIOS_CAMCTL_HEARTBEAT_FILE, 'w', encoding = 'utf-8') as f:
+        f.write('OK\nUpdated|a=0')
     return jsonify(action=action)
 
 # /spaceapi: SpaceAPI

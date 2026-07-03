@@ -1,0 +1,371 @@
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+is_acs_request_valid
+Exception: 'ACS_VERIFICATION_TOKEN'
+is_acs_request_valid: No?
+Invalid request. Aborting
+127.0.0.1 - - [07/Jun/2026 19:09:48] "[31m[1mPOST /acsquery HTTP/1.1[0m" 403 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+is_acs_request_valid
+Ignoring /acsquery from other device
+127.0.0.1 - - [07/Jun/2026 19:10:46] "POST /acsquery HTTP/1.1" 200 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [07/Jun/2026 19:55:17] "[33mPOST /acsstatus HTTP/1.1[0m" 404 -
+Exception: 400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
+Invalid Slack request. Aborting
+127.0.0.1 - - [07/Jun/2026 19:55:37] "[31m[1mPOST /slash/acsstatus HTTP/1.1[0m" 403 -
+Exception: 400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
+Invalid Slack request. Aborting
+127.0.0.1 - - [07/Jun/2026 19:58:51] "[31m[1mPOST /slash/acsstatus HTTP/1.1[0m" 403 -
+Exception: 400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
+Invalid Slack request. Aborting
+127.0.0.1 - - [07/Jun/2026 19:58:57] "[31m[1mPOST /slash/acsstatus HTTP/1.1[0m" 403 -
+Exception: 400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
+Invalid Slack request. Aborting
+127.0.0.1 - - [07/Jun/2026 19:59:07] "[31m[1mPOST /slash/acsstatus HTTP/1.1[0m" 403 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+Exception: 400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
+Invalid Slack request. Aborting
+127.0.0.1 - - [07/Jun/2026 19:59:55] "[31m[1mPOST /slash/acsstatus HTTP/1.1[0m" 403 -
+Exception: 400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
+Invalid Slack request. Aborting
+127.0.0.1 - - [07/Jun/2026 20:01:17] "[31m[1mPOST /slash/acsstatus HTTP/1.1[0m" 403 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+Exception: 400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
+Invalid Slack request. Aborting
+127.0.0.1 - - [07/Jun/2026 20:02:13] "[31m[1mPOST /slash/acsstatus HTTP/1.1[0m" 403 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+Exception: 400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
+Invalid Slack request. Aborting
+127.0.0.1 - - [07/Jun/2026 20:03:20] "[31m[1mPOST /slash/acsstatus HTTP/1.1[0m" 403 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+Exception: 400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
+Invalid Slack request. Aborting
+127.0.0.1 - - [07/Jun/2026 20:04:07] "[31m[1mPOST /slash/acsstatus HTTP/1.1[0m" 403 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+Exception: 400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
+Invalid Slack request. Aborting
+127.0.0.1 - - [07/Jun/2026 20:05:23] "[31m[1mPOST /slash/acsstatus HTTP/1.1[0m" 403 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+Exception: 400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
+Invalid Slack request. Aborting
+127.0.0.1 - - [07/Jun/2026 20:06:25] "[31m[1mPOST /slash/acsstatus HTTP/1.1[0m" 403 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+Slack command received: acsstatus
+Exception on /slash/acsstatus [POST]
+Traceback (most recent call last):
+  File "/home/torsten/projects/acs-slack-gateway/.venv/lib/python3.14/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/torsten/projects/acs-slack-gateway/.venv/lib/python3.14/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/torsten/projects/acs-slack-gateway/.venv/lib/python3.14/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "/home/torsten/projects/acs-slack-gateway/.venv/lib/python3.14/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/torsten/projects/acs-slack-gateway/.venv/lib/python3.14/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/torsten/projects/acs-slack-gateway/service.py", line 403, in command
+    return handle_acsstatus(self)
+                            ^^^^
+NameError: name 'self' is not defined
+127.0.0.1 - - [07/Jun/2026 20:07:19] "[35m[1mPOST /slash/acsstatus HTTP/1.1[0m" 500 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+Slack command received: acsstatus
+Slack ACS status: <Response 721 bytes [200 OK]>
+127.0.0.1 - - [07/Jun/2026 20:08:30] "POST /slash/acsstatus HTTP/1.1" 200 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+Slack command received: acsstatus
+Slack ACS status: <Response 776 bytes [200 OK]>
+127.0.0.1 - - [07/Jun/2026 20:11:27] "POST /slash/acsstatus HTTP/1.1" 200 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+Slack command received: acsstatus
+Slack ACS status: <Response 785 bytes [200 OK]>
+127.0.0.1 - - [07/Jun/2026 20:14:13] "POST /slash/acsstatus HTTP/1.1" 200 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.214:5000
+[33mPress CTRL+C to quit[0m
+Slack command received: acsstatus
+Slack ACS status: <Response 785 bytes [200 OK]>
+127.0.0.1 - - [07/Jun/2026 20:16:12] "POST /slash/acsstatus HTTP/1.1" 200 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.249:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.249:5000
+[33mPress CTRL+C to quit[0m
+Exception: 'SLACK_VERIFICATION_TOKEN'
+Invalid Slack request. Aborting
+127.0.0.1 - - [14/Jun/2026 17:01:13] "[31m[1mPOST /slash/acsstatus HTTP/1.1[0m" 403 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.249:5000
+[33mPress CTRL+C to quit[0m
+Slack command received: acsstatus
+Slack ACS status: <Response 59 bytes [200 OK]>
+127.0.0.1 - - [14/Jun/2026 17:01:57] "POST /slash/acsstatus HTTP/1.1" 200 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.249:5000
+[33mPress CTRL+C to quit[0m
+Slack command received: acsstatus
+Exception on /slash/acsstatus [POST]
+Traceback (most recent call last):
+  File "/home/torsten/projects/acs-slack-gateway/.venv/lib/python3.14/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/torsten/projects/acs-slack-gateway/.venv/lib/python3.14/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/torsten/projects/acs-slack-gateway/.venv/lib/python3.14/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "/home/torsten/projects/acs-slack-gateway/.venv/lib/python3.14/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/torsten/projects/acs-slack-gateway/.venv/lib/python3.14/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/torsten/projects/acs-slack-gateway/service.py", line 414, in command
+    return handle_acsstatus()
+  File "/home/torsten/projects/acs-slack-gateway/service.py", line 241, in handle_acsstatus
+    status = get_acs_status()
+  File "/home/torsten/projects/acs-slack-gateway/service.py", line 162, in get_acs_status
+    data = dev_status["data"]
+           ~~~~~~~~~~^^^^^^^^
+KeyError: 'data'
+127.0.0.1 - - [14/Jun/2026 17:02:41] "[35m[1mPOST /slash/acsstatus HTTP/1.1[0m" 500 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.249:5000
+[33mPress CTRL+C to quit[0m
+Slack command received: acsstatus
+Exception on /slash/acsstatus [POST]
+Traceback (most recent call last):
+  File "/home/torsten/projects/acs-slack-gateway/.venv/lib/python3.14/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/torsten/projects/acs-slack-gateway/.venv/lib/python3.14/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/torsten/projects/acs-slack-gateway/.venv/lib/python3.14/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "/home/torsten/projects/acs-slack-gateway/.venv/lib/python3.14/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/torsten/projects/acs-slack-gateway/.venv/lib/python3.14/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/torsten/projects/acs-slack-gateway/service.py", line 415, in command
+    return handle_acsstatus()
+  File "/home/torsten/projects/acs-slack-gateway/service.py", line 242, in handle_acsstatus
+    status = get_acs_status()
+  File "/home/torsten/projects/acs-slack-gateway/service.py", line 163, in get_acs_status
+    data = dev_status["data"]
+           ~~~~~~~~~~^^^^^^^^
+KeyError: 'data'
+127.0.0.1 - - [14/Jun/2026 17:03:29] "[35m[1mPOST /slash/acsstatus HTTP/1.1[0m" 500 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.249:5000
+[33mPress CTRL+C to quit[0m
+Slack command received: acsstatus
+Slack ACS status: <Response 1085 bytes [200 OK]>
+127.0.0.1 - - [14/Jun/2026 17:04:38] "POST /slash/acsstatus HTTP/1.1" 200 -
+Slack command received: acslastlog
+127.0.0.1 - - [14/Jun/2026 17:05:06] "[31m[1mPOST /slash/acslastlog HTTP/1.1[0m" 400 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.249:5000
+[33mPress CTRL+C to quit[0m
+Slack command received: acslastlog
+127.0.0.1 - - [14/Jun/2026 17:05:58] "[31m[1mPOST /slash/acslastlog HTTP/1.1[0m" 400 -
+Exception: 400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
+Invalid Slack request. Aborting
+127.0.0.1 - - [14/Jun/2026 17:06:48] "[31m[1mPOST /slash/acslastlog HTTP/1.1[0m" 403 -
+Exception: 400 Bad Request: The browser (or proxy) sent a request that this server could not understand.
+Invalid Slack request. Aborting
+127.0.0.1 - - [14/Jun/2026 17:07:01] "[31m[1mPOST /slash/acslastlog HTTP/1.1[0m" 403 -
+Slack command received: acslastlog
+lastlog: hej
+pattern: /opt/service/persistent/logs/acs.*
+files: ['/opt/service/persistent/logs/acs.2026-06-14_13']
+lastfile: /opt/service/persistent/logs/acs.2026-06-14_13
+Slack logs: <Response 466 bytes [200 OK]>
+127.0.0.1 - - [14/Jun/2026 17:07:17] "POST /slash/acslastlog HTTP/1.1" 200 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.249:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.249:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.249:5000
+[33mPress CTRL+C to quit[0m
+Slack command received: acsstatus
+Slack ACS status: <Response 798 bytes [200 OK]>
+127.0.0.1 - - [17/Jun/2026 20:44:57] "POST /slash/acsstatus HTTP/1.1" 200 -
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.249:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.249:5000
+[33mPress CTRL+C to quit[0m
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.249:5000
+[33mPress CTRL+C to quit[0m
