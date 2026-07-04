@@ -5,6 +5,8 @@ from werkzeug.serving import WSGIRequestHandler
 import certifi
 import datetime
 import glob
+import hashlib
+import hmac
 import json
 import logging
 import os
@@ -59,15 +61,55 @@ handler = logging.FileHandler('acsgw.log')
 logger.addHandler(handler)
 app.logger.addHandler(handler)
 
-# Validate token/team from Slack slash command
+# Validate Slack request using signing secret
 def is_slack_request_valid(request):
     try:
-        is_token_valid = request.form['token'] == os.environ['SLACK_VERIFICATION_TOKEN']
-        is_team_id_valid = request.form['team_id'] == os.environ['SLACK_TEAM_ID']
+        slack_signing_secret = os.environ.get('SLACK_SIGNING_SECRET')
+        if not slack_signing_secret:
+            logger.error('SLACK_SIGNING_SECRET not configured')
+            return False
+        
+        # Get timestamp and signature from request headers
+        timestamp = request.headers.get('X-Slack-Request-Timestamp')
+        signature = request.headers.get('X-Slack-Signature')
+        
+        if not timestamp or not signature:
+            logger.info('Missing Slack timestamp or signature headers')
+            return False
+        
+        # Verify timestamp is not too old (5 minutes)
+        try:
+            ts = int(timestamp)
+            current_time = int(datetime.datetime.now().timestamp())
+            if abs(current_time - ts) > 300:
+                logger.info('Request timestamp too old: %d' % ts)
+                return False
+        except (ValueError, TypeError) as e:
+            logger.info('Invalid timestamp: %s' % e)
+            return False
+        
+        # Get raw request body
+        request_body = request.get_data(as_text=True)
+        
+        # Construct base string
+        base_string = f'v0:{timestamp}:{request_body}'
+        
+        # Compute HMAC-SHA256
+        computed_signature = 'v0=' + hmac.new(
+            slack_signing_secret.encode(),
+            base_string.encode(),
+            hashlib.sha256
+        ).hexdigest()
+        
+        # Compare signatures securely
+        if not hmac.compare_digest(signature, computed_signature):
+            logger.info('Invalid Slack signature')
+            return False
+        
+        return True
     except Exception as e:
-        logger.info('Exception: %s' % e)
-        return False
-    return is_token_valid and is_team_id_valid    
+        logger.info('Exception validating Slack request: %s' % e)
+        return False    
 
 # Validate user in /acsaction
 def is_acs_action_allowed(request):
