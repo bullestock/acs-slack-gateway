@@ -21,7 +21,7 @@ LOG_DIR='/opt/service/logs'
 # Mounted at /srv/acsgw/firmware
 FIRMWARE_DIR='/opt/service/persistent/firmware'
 
-DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'setdesc']
+DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'setdesc', 'setacstoken']
 GLOBAL_ACTIONS = ['open', 'close']
 CAMCTL_ACTIONS = ['on', 'off', 'reboot']
 
