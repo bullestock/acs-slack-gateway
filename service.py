@@ -25,7 +25,13 @@ DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'setdesc', 'setacstoken']
 GLOBAL_ACTIONS = ['open', 'close']
 CAMCTL_ACTIONS = ['on', 'off', 'reboot']
 
-TOPIC_ROOT = "hal9k/acs/status"
+STATUS_TOPIC = "hal9k/acs/status"
+BACKEND_TOPIC = "hal9k/acs/backend"
+FRONTEND_DESC_MAP = {
+    "main": "the space from outside",
+    "barndoor": "the space from the barn",
+    "woodshop": "the woodshop from the barn",
+}
 
 global_acs_device = None
 global_acs_action = None
@@ -567,12 +573,28 @@ def on_mqtt_message(client, userdata, message):
     except:
         # Ignore invalid or missing JSON
         return
-    topic = message.topic[len(TOPIC_ROOT)+1:]
-    topic_parts = topic.split("/")
-    if len(topic_parts) != 1:
-        return
-    device = topic_parts[0]
-    app.status[device] = data
+    if message.topic.startswith(STATUS_TOPIC):
+        # "hal9k/acs/status/main <json>" -> "main <json>"
+        topic = message.topic[len(STATUS_TOPIC)+1:]
+        topic_parts = topic.split("/")
+        if len(topic_parts) != 1:
+            return
+        device = topic_parts[0]
+        app.status[device] = data
+    elif message.topic.startswith(BACKEND_TOPIC):
+        # "hal9k/acs/backend/log <json>"
+        # "hal9k/acs/backend/unknown_card <json>"
+        topic = message.topic[len(BACKEND_TOPIC)+1:]
+        topic_parts = topic.split("/")
+        if len(topic_parts) != 1:
+            return
+        action = topic_parts[0]
+        if action == "log":
+            logger.info(f"backend log: {data}")
+        elif action == "unknown_card":
+            logger.info(f"backend unknown_card: {data}")
+        else:
+            logger.info(f"backend {action}?")
     
 # Start the server on port 5000
 if __name__ == '__main__':
@@ -581,7 +603,8 @@ if __name__ == '__main__':
     ctx = ssl.create_default_context(cafile=certifi.where())
     client.tls_set_context(ctx)
     client.connect("mqtt.hal9k.dk", 8883)
-    client.subscribe(f"{TOPIC_ROOT}/#", qos=1)
+    client.subscribe(f"{STATUS_TOPIC}/#", qos=1)
+    client.subscribe(f"{BACKEND_TOPIC}/#", qos=1)
     client.on_message = on_mqtt_message
     client.loop_start()
     app.run(host='0.0.0.0', port=5000)
