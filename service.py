@@ -31,6 +31,7 @@ FRONTEND_DESC_MAP = {
     "main": "the space from outside",
     "barndoor": "the space from the barn",
     "woodshop": "the woodshop from the barn",
+    "tester": "the backrooms",
 }
 
 global_acs_device = None
@@ -582,15 +583,18 @@ def on_mqtt_message(client, userdata, message):
         data = json.loads(data)
     except:
         # Ignore invalid or missing JSON
+        logger.info(f"Invalid MQTT data: {data}")
         return
     if message.topic.startswith(STATUS_TOPIC):
         # "hal9k/acs/status/main <json>" -> "main <json>"
         topic = message.topic[len(STATUS_TOPIC)+1:]
         topic_parts = topic.split("/")
         if len(topic_parts) != 1:
+            logger.info(f"Invalid MQTT topic: {message.topic}")
             return
         device = topic_parts[0]
         app.status[device] = data
+        logger.info(f"Updated MQTT status for {device}")
     elif message.topic.startswith(BACKEND_TOPIC):
         # "hal9k/acs/backend/log <json>"
         # "hal9k/acs/backend/unknown_card <json>"
@@ -604,16 +608,16 @@ def on_mqtt_message(client, userdata, message):
             if not "identifier" in data:
                 logger.info(f"Missing identifier in backend/log: {data}")
                 return
-            # device = data["identifier"]
-            #if device in FRONTEND_DESC_MAP:
-            #  slack_write(f"A hacker just entered {FRONTEND_DESC_MAP[device]}")
-            # else:
-            #  slack_write(f"A hacker just entered the unknowns:interrobang:")
+            device = data["identifier"]
+            if device in FRONTEND_DESC_MAP:
+                slack_write(f"A hacker just entered {FRONTEND_DESC_MAP[device]}")
+            else:
+                slack_write(f"A hacker just entered the unknowns:interrobang:")
             if not "user_id" in data:
                 logger.info(f"Missing user_id in backend/log: {data}")
                 return
-            if not "message" in data:
-                logger.info(f"Missing message in backend/log: {data}")
+            if not "text" in data:
+                logger.info(f"Missing text in backend/log: {data}")
                 return
             if not "stamp" in data:
                 logger.info(f"Missing stamp in backend/log: {data}")
