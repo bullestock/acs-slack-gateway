@@ -134,9 +134,6 @@ def is_backend_request_valid(data):
     if not "identifier" in data:
         logger.info(f"Missing identifier: {data}")
         return False
-    if not "user_id" in data:
-        logger.info(f"Missing user_id: {data}")
-        return False
     if not "text" in data:
         logger.info(f"Missing text: {data}")
         return False
@@ -620,6 +617,13 @@ def log_backend(user_id, message):
     except Exception as e:
         logger.info(f"log_backend exception: {e}")
     
+def log_unknown_card(card_id):
+    try:
+        body = { "api_token": os.environ["ACS_DOOR_TOKEN"], "card_id": card_id }
+        r = requests.post(url = 'https://panopticon.hal9k.dk/api/v1/unknown_cards', json = body)
+    except Exception as e:
+        logger.info(f"log_unknown_card exception: {e}")
+    
 def on_mqtt_message(client, userdata, message):
     try:
         try:
@@ -671,13 +675,14 @@ def on_mqtt_message(client, userdata, message):
                 if not is_backend_request_valid(data):
                     logger.info(f"Invalid backend/unknown_card request: {data}")
                     return
-                # TODO: log to unknown_card
+                # Log to backend
+                log_unknown_card(data["text"])
             elif action == "slack":
                 logger.info(f"backend slack: {data}")
                 if not is_backend_request_valid(data):
                     logger.info(f"Invalid backend/slack request: {data}")
                     return
-                #slack_write(f"")
+                slack_write(f"({data['identifier']}) {data['text']}")
             else:
                 logger.info(f"backend {action}?")
     except Exception as e:
