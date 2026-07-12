@@ -14,7 +14,8 @@ import paho.mqtt.client as paho
 from paho import mqtt
 import requests
 import ssl
-import uuid
+import struct
+
 
 # Contains log files written by acsmqttlogger
 LOG_DIR='/opt/service/logs'
@@ -55,7 +56,7 @@ def slack_write(msg, emoji=':panopticon:'):
             }
         r = requests.post(url = 'https://slack.com/api/chat.postMessage', data = body, headers = headers)
     except Exception as e:
-        print('%s Slack exception: %s' % (datetime.datetime.now(), e))
+        logger.info('%s Slack exception: %s' % (datetime.datetime.now(), e))
 
 
 app = Flask(__name__)
@@ -89,10 +90,10 @@ def is_slack_request_valid(request):
             ts = int(timestamp)
             current_time = int(datetime.datetime.now().timestamp())
             if abs(current_time - ts) > 300:
-                logger.info('Request timestamp too old: %d' % ts)
+                logger.info('Slack request timestamp too old: %d' % ts)
                 return False
         except (ValueError, TypeError) as e:
-            logger.info('Invalid timestamp: %s' % e)
+            logger.info('Slack invalid timestamp: %s' % e)
             return False
         
         # Get raw request body
@@ -118,15 +119,47 @@ def is_slack_request_valid(request):
         logger.info('Exception validating Slack request: %s' % e)
         return False    
 
+def verify_hash_with_timestamp(message: str, digest: bytes, timestamp: int) -> bool:
+    hasher = hashlib.sha256()
+    hasher.update(bytes.fromhex(os.environ['MQTT_KEY']))
+    hasher.update(struct.pack('<Q', timestamp))
+    hasher.update(message.encode('utf-8'))
+
+    return hasher.digest() == digest
+
 def is_backend_request_valid(data):
     """
     Validate backend request using MQTT_KEY
     """
-    key = os.environ['MQTT_KEY']
-    stamp = data["stamp"]
-    message = data["message"]
+    if not "identifier" in data:
+        logger.info(f"Missing identifier: {data}")
+        return False
+    if not "user_id" in data:
+        logger.info(f"Missing user_id: {data}")
+        return False
+    if not "text" in data:
+        logger.info(f"Missing text: {data}")
+        return False
+    if not "stamp" in data:
+        logger.info(f"Missing stamp: {data}")
+        return False
+    if not "hash" in data:
+        logger.info(f"Missing hash: {data}")
+        return False
+    stamp = int(data["stamp"])
+    text = data["text"]
     hash = data["hash"]
-    return False
+    # Verify timestamp is not too old (30 seconds)
+    try:
+        current_time = int(datetime.datetime.now().timestamp())
+        if abs(current_time - stamp) > 30:
+            logger.info('Backend request timestamp too old: %d' % stamp)
+            return False
+    except (ValueError, TypeError) as e:
+        logger.info('Backend invalid timestamp: %s' % e)
+        return False
+
+    return verify_hash_with_timestamp(text, bytes.fromhex(hash), stamp)
     
 # Validate user in /acsaction
 def is_acs_action_allowed(request):
@@ -597,6 +630,7 @@ def on_mqtt_message(client, userdata, message):
         logger.info(f"Updated MQTT status for {device}")
     elif message.topic.startswith(BACKEND_TOPIC):
         # "hal9k/acs/backend/log <json>"
+        # "hal9k/acs/backend/slack <json>"
         # "hal9k/acs/backend/unknown_card <json>"
         topic = message.topic[len(BACKEND_TOPIC)+1:]
         topic_parts = topic.split("/")
@@ -604,33 +638,33 @@ def on_mqtt_message(client, userdata, message):
             return
         action = topic_parts[0]
         if action == "log":
-            logger.info(f"backend log: {data}")
-            if not "identifier" in data:
-                logger.info(f"Missing identifier in backend/log: {data}")
-                return
-            device = data["identifier"]
-            if device in FRONTEND_DESC_MAP:
-                slack_write(f"A hacker just entered {FRONTEND_DESC_MAP[device]}")
-            else:
-                slack_write(f"A hacker just entered the unknowns:interrobang:")
-            if not "user_id" in data:
-                logger.info(f"Missing user_id in backend/log: {data}")
-                return
-            if not "text" in data:
-                logger.info(f"Missing text in backend/log: {data}")
-                return
-            if not "stamp" in data:
-                logger.info(f"Missing stamp in backend/log: {data}")
-                return
-            if not "hash" in data:
-                logger.info(f"Missing hash in backend/log: {data}")
-                return
-            if not is_backend_request_valid(data):
-                logger.info(f"Invalid backend/log request: {data}")
-                return
-            # TODO: log to backend
+            try:
+                logger.info(f"backend log: {data}")
+                if not is_backend_request_valid(data):
+                    logger.info(f"Invalid backend/log request: {data}")
+                    return
+                logger.info(f"backend log: request is valid")
+                device = data["identifier"]
+                if device in FRONTEND_DESC_MAP:
+                    slack_write(f"A hacker just entered {FRONTEND_DESC_MAP[device]}")
+                else:
+                    slack_write(f"A hacker just entered the unknowns:interrobang:")
+                logger.info(f"backend log: wrote to Slack")
+                # TODO: log to backend
+            except Exception as e:
+                logger.info(f"Exception: {e}")
         elif action == "unknown_card":
             logger.info(f"backend unknown_card: {data}")
+            if not is_backend_request_valid(data):
+                logger.info(f"Invalid backend/unknown_card request: {data}")
+                return
+            # TODO: log to unknown_card
+        elif action == "slack":
+            logger.info(f"backend slack: {data}")
+            if not is_backend_request_valid(data):
+                logger.info(f"Invalid backend/slack request: {data}")
+                return
+            #slack_write(f"")
         else:
             logger.info(f"backend {action}?")
     
