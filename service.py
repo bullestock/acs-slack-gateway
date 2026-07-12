@@ -45,16 +45,16 @@ global_last_cameras_on = None
 global_space_open = False
 global_space_open_lastchange = 0 # UNIX timestamp
 
-def slack_write(msg):
+def slack_write(msg, emoji=':panopticon:'):
     try:
-        body = { 'channel': 'private-monitoring', 'icon_emoji': ':panopticon:', 'parse': 'full', 'text': msg }
+        body = { 'channel': 'jeg-står-herude-og-banker-på', 'icon_emoji': emoji, 'parse': 'full', 'text': msg }
         headers = {
                 'content_type': 'application/json',
                 'Authorization': 'Bearer %s' % os.environ['SLACK_WRITE_TOKEN']
             }
         r = requests.post(url = 'https://slack.com/api/chat.postMessage', data = body, headers = headers)
     except Exception as e:
-        print('%s Slack exception: %s' % (datetime.now, e))
+        print('%s Slack exception: %s' % (datetime.datetime.now(), e))
 
 
 app = Flask(__name__)
@@ -117,6 +117,16 @@ def is_slack_request_valid(request):
         logger.info('Exception validating Slack request: %s' % e)
         return False    
 
+def is_backend_request_valid(data):
+    """
+    Validate backend request using MQTT_KEY
+    """
+    key = os.environ['MQTT_KEY']
+    stamp = data["stamp"]
+    message = data["message"]
+    hash = data["hash"]
+    return False
+    
 # Validate user in /acsaction
 def is_acs_action_allowed(request):
     try:
@@ -591,6 +601,30 @@ def on_mqtt_message(client, userdata, message):
         action = topic_parts[0]
         if action == "log":
             logger.info(f"backend log: {data}")
+            if not "identifier" in data:
+                logger.info(f"Missing identifier in backend/log: {data}")
+                return
+            # device = data["identifier"]
+            #if device in FRONTEND_DESC_MAP:
+            #  slack_write(f"A hacker just entered {FRONTEND_DESC_MAP[device]}")
+            # else:
+            #  slack_write(f"A hacker just entered the unknowns:interrobang:")
+            if not "user_id" in data:
+                logger.info(f"Missing user_id in backend/log: {data}")
+                return
+            if not "message" in data:
+                logger.info(f"Missing message in backend/log: {data}")
+                return
+            if not "stamp" in data:
+                logger.info(f"Missing stamp in backend/log: {data}")
+                return
+            if not "hash" in data:
+                logger.info(f"Missing hash in backend/log: {data}")
+                return
+            if not is_backend_request_valid(data):
+                logger.info(f"Invalid backend/log request: {data}")
+                return
+            # TODO: log to backend
         elif action == "unknown_card":
             logger.info(f"backend unknown_card: {data}")
         else:
