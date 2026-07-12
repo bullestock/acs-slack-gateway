@@ -56,7 +56,7 @@ def slack_write(msg, emoji=':panopticon:'):
             }
         r = requests.post(url = 'https://slack.com/api/chat.postMessage', data = body, headers = headers)
     except Exception as e:
-        logger.info('%s Slack exception: %s' % (datetime.datetime.now(), e))
+        logger.info(f"Slack exception: {e}")
 
 
 app = Flask(__name__)
@@ -183,7 +183,7 @@ def is_cam_action_allowed(request):
 
 # Validate token in /acsquery
 def is_acs_request_valid(request):
-    logger.info('is_acs_request_valid')
+    #logger.info('is_acs_request_valid')
     if not request.is_json:
         logger.info('is_acs_request_valid: No JSON')
         return False
@@ -538,7 +538,7 @@ def get_camctl():
     if not is_camctl_request_valid(request):
         logger.info('Invalid camctl request. Aborting')
         return abort(403)
-    logger.info('Camctl args %s' % request.args)
+    #logger.info('Camctl args %s' % request.args)
     status = []
     cameras_on = False
     if request.args.get('cameras'):
@@ -610,63 +610,78 @@ def spaceapi():
     }
     return jsonify(info)
 
+def log_backend(user_id, message):
+    try:
+        body = { "api_token": os.environ["ACS_DOOR_TOKEN"], "log": { "message": message } }
+        if user_id is not None:
+            body["log"]["user_id"] = user_id
+        logger.info(f"log_backend: {body}")
+        r = requests.post(url = 'https://panopticon.hal9k.dk/api/v1/logs', json = body)
+    except Exception as e:
+        logger.info(f"log_backend exception: {e}")
+    
 def on_mqtt_message(client, userdata, message):
     try:
-        data = message.payload.decode("utf-8")
-        data = json.loads(data)
-    except:
-        # Ignore invalid or missing JSON
-        logger.info(f"Invalid MQTT data: {data}")
-        return
-    if message.topic.startswith(STATUS_TOPIC):
-        # "hal9k/acs/status/main <json>" -> "main <json>"
-        topic = message.topic[len(STATUS_TOPIC)+1:]
-        topic_parts = topic.split("/")
-        if len(topic_parts) != 1:
-            logger.info(f"Invalid MQTT topic: {message.topic}")
+        try:
+            data = message.payload.decode("utf-8")
+            data = json.loads(data)
+        except:
+            # Ignore invalid or missing JSON
+            logger.info(f"Invalid MQTT data: {data}")
             return
-        device = topic_parts[0]
-        app.status[device] = data
-        logger.info(f"Updated MQTT status for {device}")
-    elif message.topic.startswith(BACKEND_TOPIC):
-        # "hal9k/acs/backend/log <json>"
-        # "hal9k/acs/backend/slack <json>"
-        # "hal9k/acs/backend/unknown_card <json>"
-        topic = message.topic[len(BACKEND_TOPIC)+1:]
-        topic_parts = topic.split("/")
-        if len(topic_parts) != 1:
-            return
-        action = topic_parts[0]
-        if action == "log":
-            try:
-                logger.info(f"backend log: {data}")
+        if message.topic.startswith(STATUS_TOPIC):
+            # "hal9k/acs/status/main <json>" -> "main <json>"
+            topic = message.topic[len(STATUS_TOPIC)+1:]
+            topic_parts = topic.split("/")
+            if len(topic_parts) != 1:
+                logger.info(f"Invalid MQTT topic: {message.topic}")
+                return
+            device = topic_parts[0]
+            app.status[device] = data
+            logger.info(f"Updated MQTT status for {device}")
+        elif message.topic.startswith(BACKEND_TOPIC):
+            # "hal9k/acs/backend/log <json>"
+            # "hal9k/acs/backend/slack <json>"
+            # "hal9k/acs/backend/unknown_card <json>"
+            topic = message.topic[len(BACKEND_TOPIC)+1:]
+            topic_parts = topic.split("/")
+            if len(topic_parts) != 1:
+                return
+            action = topic_parts[0]
+            if action == "log":
+                try:
+                    logger.info(f"backend log: {data}")
+                    if not is_backend_request_valid(data):
+                        logger.info(f"Invalid backend/log request: {data}")
+                        return
+                    logger.info(f"backend log: request is valid")
+                    device = data["identifier"]
+                    if "Granted entry" in data["text"]:
+                        if device in FRONTEND_DESC_MAP:
+                            slack_write(f":unlock: A hacker just entered {FRONTEND_DESC_MAP[device]}")
+                        else:
+                            slack_write(f":unlock: A hacker just entered the unknowns:interrobang:")
+                    logger.info(f"backend log: wrote to Slack")
+                    # Log to backend
+                    log_backend(data["user_id"], data["text"])
+                except Exception as e:
+                    logger.info(f"Exception: {e}")
+            elif action == "unknown_card":
+                logger.info(f"backend unknown_card: {data}")
                 if not is_backend_request_valid(data):
-                    logger.info(f"Invalid backend/log request: {data}")
+                    logger.info(f"Invalid backend/unknown_card request: {data}")
                     return
-                logger.info(f"backend log: request is valid")
-                device = data["identifier"]
-                if device in FRONTEND_DESC_MAP:
-                    slack_write(f"A hacker just entered {FRONTEND_DESC_MAP[device]}")
-                else:
-                    slack_write(f"A hacker just entered the unknowns:interrobang:")
-                logger.info(f"backend log: wrote to Slack")
-                # TODO: log to backend
-            except Exception as e:
-                logger.info(f"Exception: {e}")
-        elif action == "unknown_card":
-            logger.info(f"backend unknown_card: {data}")
-            if not is_backend_request_valid(data):
-                logger.info(f"Invalid backend/unknown_card request: {data}")
-                return
-            # TODO: log to unknown_card
-        elif action == "slack":
-            logger.info(f"backend slack: {data}")
-            if not is_backend_request_valid(data):
-                logger.info(f"Invalid backend/slack request: {data}")
-                return
-            #slack_write(f"")
-        else:
-            logger.info(f"backend {action}?")
+                # TODO: log to unknown_card
+            elif action == "slack":
+                logger.info(f"backend slack: {data}")
+                if not is_backend_request_valid(data):
+                    logger.info(f"Invalid backend/slack request: {data}")
+                    return
+                #slack_write(f"")
+            else:
+                logger.info(f"backend {action}?")
+    except Exception as e:
+        logger.info(f"MQTT exception: {e}")
     
 # Start the server on port 5000
 if __name__ == '__main__':
