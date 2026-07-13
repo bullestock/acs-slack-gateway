@@ -45,7 +45,7 @@ class AcsMqtt(paho.Client):
 
     def log_info(self, msg):
         if self.logger:
-            logger.info(msg)
+            self.logger.info(msg)
 
     def slack_write(self, msg, channel='jeg-står-herude-og-banker-på', emoji=':panopticon:'):
         c_channel = channel
@@ -200,7 +200,7 @@ class AcsMqtt(paho.Client):
                     msg = data['text']
                     channel = 'jeg-står-herude-og-banker-på'
                     emoji = ':panopticon:'
-                    if msg.contains("|"):
+                    if "|" in msg:
                         parts = msg.split("|")
                         msg = f"({data['identifier']}) {parts[0]}|" + "|".join(parts[1:])
                     self.slack_write(msg)
