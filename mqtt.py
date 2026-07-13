@@ -1,3 +1,5 @@
+import argparse
+import certifi
 import datetime
 import hashlib
 import json
@@ -5,6 +7,7 @@ import os
 import requests
 import ssl
 import struct
+import sys
 import time
 
 import paho.mqtt.client as paho
@@ -39,17 +42,30 @@ class AcsMqtt(paho.Client):
     def __init__(self, logger, userdata):
         super().__init__(client_id="", userdata=userdata, protocol=paho.MQTTv5)
         self.logger = logger
- 
-    def slack_write(self, msg, emoji=':panopticon:'):
+
+    def log_info(self, msg):
+        if self.logger:
+            logger.info(msg)
+
+    def slack_write(self, msg, channel='jeg-står-herude-og-banker-på', emoji=':panopticon:'):
+        c_channel = channel
+        c_emoji = emoji
+        print(msg)
+        if "|" in msg:
+            parts = msg.split("|")
+            msg = parts[0]
+            c_channel = parts[1]
+            if len(parts) > 2:
+                c_emoji = parts[2]
         try:
-            body = { 'channel': 'jeg-står-herude-og-banker-på', 'icon_emoji': emoji, 'parse': 'full', 'text': msg }
+            body = { 'channel': c_channel, 'icon_emoji': c_emoji, 'parse': 'full', 'text': msg }
             headers = {
                     'content_type': 'application/json',
                     'Authorization': 'Bearer %s' % SLACK_WRITE_TOKEN
                 }
             r = requests.post(url = 'https://slack.com/api/chat.postMessage', data = body, headers = headers)
         except Exception as e:
-            self.logger.info(f"Slack exception: {e}")
+            self.log_info(f"Slack exception: {e}")
 
     def log_backend(self, user_id, message):
         try:
@@ -58,22 +74,22 @@ class AcsMqtt(paho.Client):
                 body["log"]["user_id"] = user_id
             r = requests.post(url = 'https://panopticon.hal9k.dk/api/v1/logs', json = body)
         except Exception as e:
-            self.logger.info(f"log_backend exception: {e}")
+            self.log_info(f"log_backend exception: {e}")
 
     def log_unknown_card(self, card_id):
         try:
             body = { "api_token": ACS_DOOR_TOKEN, "card_id": card_id }
             r = requests.post(url = 'https://panopticon.hal9k.dk/api/v1/unknown_cards', json = body)
         except Exception as e:
-            self.logger.info(f"log_unknown_card exception: {e}")
+            self.log_info(f"log_unknown_card exception: {e}")
 
     def on_connect(self, client, userdata, flags, rc, props):
-        self.logger.info("MQTT connected")
+        self.log_info("MQTT connected")
         client.subscribe(f"{STATUS_TOPIC}/#", qos=1)
         client.subscribe(f"{BACKEND_TOPIC}/#", qos=1)
 
     def on_disconnect(self, client, userdata, rc):
-        self.logger.info("MQTT disconnected")
+        self.log_info("MQTT disconnected")
         while True:
             # loop until client.reconnect()
             # returns 0, which means the
@@ -97,16 +113,16 @@ class AcsMqtt(paho.Client):
         Validate backend request using MQTT_KEY
         """
         if not "identifier" in data:
-            self.logger.info(f"Missing identifier: {data}")
+            self.log_info(f"Missing identifier: {data}")
             return False
         if not "text" in data:
-            self.logger.info(f"Missing text: {data}")
+            self.log_info(f"Missing text: {data}")
             return False
         if not "stamp" in data:
-            self.logger.info(f"Missing stamp: {data}")
+            self.log_info(f"Missing stamp: {data}")
             return False
         if not "hash" in data:
-            self.logger.info(f"Missing hash: {data}")
+            self.log_info(f"Missing hash: {data}")
             return False
         stamp = int(data["stamp"])
         text = data["text"]
@@ -115,10 +131,10 @@ class AcsMqtt(paho.Client):
         try:
             current_time = int(datetime.datetime.now().timestamp())
             if abs(current_time - stamp) > 30:
-                self.logger.info('Backend request timestamp too old: %d' % stamp)
+                self.log_info('Backend request timestamp too old: %d' % stamp)
                 return False
         except (ValueError, TypeError) as e:
-            self.logger.info('Backend invalid timestamp: %s' % e)
+            self.log_info('Backend invalid timestamp: %s' % e)
             return False
 
         return verify_hash_with_timestamp(text, bytes.fromhex(hash), stamp)
@@ -130,18 +146,18 @@ class AcsMqtt(paho.Client):
                 data = json.loads(data)
             except:
                 # Ignore invalid or missing JSON
-                self.logger.info(f"Invalid MQTT data: {data}")
+                self.log_info(f"Invalid MQTT data: {data}")
                 return
             if message.topic.startswith(STATUS_TOPIC):
                 # "hal9k/acs/status/main <json>" -> "main <json>"
                 topic = message.topic[len(STATUS_TOPIC)+1:]
                 topic_parts = topic.split("/")
                 if len(topic_parts) != 1:
-                    self.logger.info(f"Invalid MQTT topic: {message.topic}")
+                    self.log_info(f"Invalid MQTT topic: {message.topic}")
                     return
                 device = topic_parts[0]
                 userdata.status[device] = data
-                self.logger.info(f"Updated MQTT status for {device}")
+                self.log_info(f"Updated MQTT status for {device}")
             elif message.topic.startswith(BACKEND_TOPIC):
                 # "hal9k/acs/backend/log <json>"
                 # "hal9k/acs/backend/slack <json>"
@@ -153,36 +169,62 @@ class AcsMqtt(paho.Client):
                 action = topic_parts[0]
                 if action == "log":
                     try:
-                        self.logger.info(f"backend log: {data}")
+                        self.log_info(f"backend log: {data}")
                         if not self.is_backend_request_valid(data):
-                            self.logger.info(f"Invalid backend/log request: {data}")
+                            self.log_info(f"Invalid backend/log request: {data}")
                             return
-                        self.logger.info(f"backend log: request is valid")
+                        self.log_info(f"backend log: request is valid")
                         device = data["identifier"]
                         if "Granted entry" in data["text"]:
                             if device in FRONTEND_DESC_MAP:
                                 self.slack_write(f":unlock: A hacker just entered {FRONTEND_DESC_MAP[device]}")
                             else:
                                 self.slack_write(f":unlock: A hacker just entered the unknowns:interrobang:")
-                        self.logger.info(f"backend log: wrote to Slack")
+                        self.log_info(f"backend log: wrote to Slack")
                         # Log to backend
                         self.log_backend(data["user_id"], data["text"])
                     except Exception as e:
-                        self.logger.info(f"Exception: {e}")
+                        self.log_info(f"Exception: {e}")
                 elif action == "unknown_card":
-                    self.logger.info(f"backend unknown_card: {data}")
+                    self.log_info(f"backend unknown_card: {data}")
                     if not self.is_backend_request_valid(data):
-                        self.logger.info(f"Invalid backend/unknown_card request: {data}")
+                        self.log_info(f"Invalid backend/unknown_card request: {data}")
                         return
                     # Log to backend
                     self.log_unknown_card(data["text"])
                 elif action == "slack":
-                    self.logger.info(f"backend slack: {data}")
+                    self.log_info(f"backend slack: {data}")
                     if not self.is_backend_request_valid(data):
-                        self.logger.info(f"Invalid backend/slack request: {data}")
+                        self.log_info(f"Invalid backend/slack request: {data}")
                         return
-                    self.slack_write(f"({data['identifier']}) {data['text']}")
+                    msg = data['text']
+                    channel = 'jeg-står-herude-og-banker-på'
+                    emoji = ':panopticon:'
+                    if msg.contains("|"):
+                        parts = msg.split("|")
+                        msg = f"({data['identifier']}) {parts[0]}|" + "|".join(parts[1:])
+                    self.slack_write(msg)
                 else:
-                    self.logger.info(f"backend {action}?")
+                    self.log_info(f"backend {action}?")
         except Exception as e:
-            self.logger.info(f"MQTT exception: {e}")
+            self.log_info(f"MQTT exception: {e}")
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="MQTT")
+    parser.add_argument("command")
+    parser.add_argument("args", nargs="*")
+    args = parser.parse_args()
+
+    mqtt_client = AcsMqtt(None, userdata=None)
+    ctx = ssl.create_default_context(cafile=certifi.where())
+    mqtt_client.tls_set_context(ctx)
+    mqtt_client.connect("mqtt.hal9k.dk", 8883)
+    mqtt_client.loop_start()
+
+    if args.command == "slack":
+        if len(args.args) != 1:
+            print("Wrong number of arguments to 'slack'")
+            sys.exit(1)
+        msg = args.args[0]
+        mqtt_client.slack_write(msg)
+        time.sleep(5)
