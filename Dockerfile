@@ -4,6 +4,7 @@ ARG GIT_COMMIT=unknown
 LABEL git-commit=$GIT_COMMIT
 
 COPY ./service.py /opt/service/
+COPY ./mqtt.py /opt/service/
 COPY ./pyproject.toml /opt/service/
 WORKDIR /opt/service
 
@@ -39,9 +40,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # Place executables in the environment at the front of the path
 ENV PATH="/opt/service/.venv/bin:$PATH"
-
-# Reset the entrypoint, don't invoke `uv`
-#ENTRYPOINT []
 
 EXPOSE 5000
 

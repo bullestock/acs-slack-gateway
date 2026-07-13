@@ -10,14 +10,12 @@ import hmac
 import json
 import logging
 import os
-import paho.mqtt.client as paho
+import ssl
+import sys
 import paho.mqtt.publish as publish
 from paho import mqtt
-import requests
-import ssl
-import struct
-import time
 
+from mqtt import AcsMqtt
 
 # Contains log files written by acsmqttlogger
 LOG_DIR='/opt/service/logs'
@@ -27,19 +25,6 @@ FIRMWARE_DIR='/opt/service/persistent/firmware'
 DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'setdesc', 'setacstoken', 'dummy']
 GLOBAL_ACTIONS = ['open', 'close', 'dummy']
 CAMCTL_ACTIONS = ['on', 'off', 'reboot']
-
-STATUS_TOPIC = "hal9k/acs/status"
-BACKEND_TOPIC = "hal9k/acs/backend"
-FRONTEND_DESC_MAP = {
-    "main": "the space from outside",
-    "barndoor": "the space from the barn",
-    "woodshop": "the woodshop from the barn",
-    "tester": "the backrooms",
-}
-
-MQTT_KEY = bytes.fromhex(os.environ['MQTT_KEY'])
-MQTT_USER = os.environ['MQTT_USER']
-MQTT_PASSWORD = os.environ['MQTT_PASSWORD']
 
 global_acs_device = None
 global_acs_action = None
@@ -53,17 +38,6 @@ global_last_cameras_on = None
 global_space_open = False
 global_space_open_lastchange = 0 # UNIX timestamp
 
-def slack_write(msg, emoji=':panopticon:'):
-    try:
-        body = { 'channel': 'jeg-står-herude-og-banker-på', 'icon_emoji': emoji, 'parse': 'full', 'text': msg }
-        headers = {
-                'content_type': 'application/json',
-                'Authorization': 'Bearer %s' % os.environ['SLACK_WRITE_TOKEN']
-            }
-        r = requests.post(url = 'https://slack.com/api/chat.postMessage', data = body, headers = headers)
-    except Exception as e:
-        logger.info(f"Slack exception: {e}")
-
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -73,6 +47,9 @@ app.status = {}
 logger = logging.getLogger('werkzeug')
 handler = logging.FileHandler('acsgw.log')
 logger.addHandler(handler)
+if os.environ.get('DEBUG', False):
+    debug_handler = logging.StreamHandler(sys.stdout)
+    logger.addHandler(debug_handler)
 app.logger.addHandler(handler)
 
 # Validate Slack request using signing secret
@@ -124,58 +101,6 @@ def is_slack_request_valid(request):
     except Exception as e:
         logger.info('Exception validating Slack request: %s' % e)
         return False    
-
-def verify_hash_with_timestamp(message: str, digest: bytes, timestamp: int) -> bool:
-    hasher = hashlib.sha256()
-    hasher.update(MQTT_KEY)
-    hasher.update(struct.pack('<Q', timestamp))
-    hasher.update(message.encode('utf-8'))
-
-    return hasher.digest() == digest
-
-def is_backend_request_valid(data):
-    """
-    Validate backend request using MQTT_KEY
-    """
-    if not "identifier" in data:
-        logger.info(f"Missing identifier: {data}")
-        return False
-    if not "text" in data:
-        logger.info(f"Missing text: {data}")
-        return False
-    if not "stamp" in data:
-        logger.info(f"Missing stamp: {data}")
-        return False
-    if not "hash" in data:
-        logger.info(f"Missing hash: {data}")
-        return False
-    stamp = int(data["stamp"])
-    text = data["text"]
-    hash = data["hash"]
-    # Verify timestamp is not too old (30 seconds)
-    try:
-        current_time = int(datetime.datetime.now().timestamp())
-        if abs(current_time - stamp) > 30:
-            logger.info('Backend request timestamp too old: %d' % stamp)
-            return False
-    except (ValueError, TypeError) as e:
-        logger.info('Backend invalid timestamp: %s' % e)
-        return False
-
-    return verify_hash_with_timestamp(text, bytes.fromhex(hash), stamp)
-
-def make_signed_payload(message):
-    hasher = hashlib.sha256()
-    hasher.update(MQTT_KEY)
-    now = int(time.time())
-    hasher.update(struct.pack('>Q', now))
-    hasher.update(message.encode('utf-8'))
-    data = {
-        "text": message,
-        "stamp": now,
-        "hash": hasher.hexdigest(),
-    }
-    return json.dumps(data)
 
 def mqtt_publish(device, payload):
     topic = "hal9k/acs/action"
@@ -582,10 +507,10 @@ def get_camctl():
         status.append(f"E-stop on: {estop_on}")
     if request.args.get('version'):
         status.append(f"V: {request.args.get('version')}")
-    global global_last_cameras_on
-    if cameras_on != global_last_cameras_on:
-        slack_write(':camera: Cameras are %s' % ('on' if cameras_on == '1' else 'off'))
-        global_last_cameras_on = cameras_on
+    # global global_last_cameras_on
+    # if cameras_on != global_last_cameras_on:
+    #     slack_write(':camera: Cameras are %s' % ('on' if cameras_on == '1' else 'off'))
+    #     global_last_cameras_on = cameras_on
     global global_camctl_action
     action = global_camctl_action
     global_camctl_action = None
@@ -643,96 +568,13 @@ def spaceapi():
     }
     return jsonify(info)
 
-def log_backend(user_id, message):
-    try:
-        body = { "api_token": os.environ["ACS_DOOR_TOKEN"], "log": { "message": message } }
-        if user_id is not None:
-            body["log"]["user_id"] = user_id
-        logger.info(f"log_backend: {body}")
-        r = requests.post(url = 'https://panopticon.hal9k.dk/api/v1/logs', json = body)
-    except Exception as e:
-        logger.info(f"log_backend exception: {e}")
-    
-def log_unknown_card(card_id):
-    try:
-        body = { "api_token": os.environ["ACS_DOOR_TOKEN"], "card_id": card_id }
-        r = requests.post(url = 'https://panopticon.hal9k.dk/api/v1/unknown_cards', json = body)
-    except Exception as e:
-        logger.info(f"log_unknown_card exception: {e}")
-    
-def on_mqtt_message(client, userdata, message):
-    try:
-        try:
-            data = message.payload.decode("utf-8")
-            data = json.loads(data)
-        except:
-            # Ignore invalid or missing JSON
-            logger.info(f"Invalid MQTT data: {data}")
-            return
-        if message.topic.startswith(STATUS_TOPIC):
-            # "hal9k/acs/status/main <json>" -> "main <json>"
-            topic = message.topic[len(STATUS_TOPIC)+1:]
-            topic_parts = topic.split("/")
-            if len(topic_parts) != 1:
-                logger.info(f"Invalid MQTT topic: {message.topic}")
-                return
-            device = topic_parts[0]
-            app.status[device] = data
-            logger.info(f"Updated MQTT status for {device}")
-        elif message.topic.startswith(BACKEND_TOPIC):
-            # "hal9k/acs/backend/log <json>"
-            # "hal9k/acs/backend/slack <json>"
-            # "hal9k/acs/backend/unknown_card <json>"
-            topic = message.topic[len(BACKEND_TOPIC)+1:]
-            topic_parts = topic.split("/")
-            if len(topic_parts) != 1:
-                return
-            action = topic_parts[0]
-            if action == "log":
-                try:
-                    logger.info(f"backend log: {data}")
-                    if not is_backend_request_valid(data):
-                        logger.info(f"Invalid backend/log request: {data}")
-                        return
-                    logger.info(f"backend log: request is valid")
-                    device = data["identifier"]
-                    if "Granted entry" in data["text"]:
-                        if device in FRONTEND_DESC_MAP:
-                            slack_write(f":unlock: A hacker just entered {FRONTEND_DESC_MAP[device]}")
-                        else:
-                            slack_write(f":unlock: A hacker just entered the unknowns:interrobang:")
-                    logger.info(f"backend log: wrote to Slack")
-                    # Log to backend
-                    log_backend(data["user_id"], data["text"])
-                except Exception as e:
-                    logger.info(f"Exception: {e}")
-            elif action == "unknown_card":
-                logger.info(f"backend unknown_card: {data}")
-                if not is_backend_request_valid(data):
-                    logger.info(f"Invalid backend/unknown_card request: {data}")
-                    return
-                # Log to backend
-                log_unknown_card(data["text"])
-            elif action == "slack":
-                logger.info(f"backend slack: {data}")
-                if not is_backend_request_valid(data):
-                    logger.info(f"Invalid backend/slack request: {data}")
-                    return
-                slack_write(f"({data['identifier']}) {data['text']}")
-            else:
-                logger.info(f"backend {action}?")
-    except Exception as e:
-        logger.info(f"MQTT exception: {e}")
-    
+
 # Start the server on port 5000
 if __name__ == '__main__':
     WSGIRequestHandler.protocol_version = "HTTP/1.1"
-    client = paho.Client(client_id="", userdata=app, protocol=paho.MQTTv5)
+    mqtt_client = AcsMqtt(logger, userdata=app)
     ctx = ssl.create_default_context(cafile=certifi.where())
-    client.tls_set_context(ctx)
-    client.connect("mqtt.hal9k.dk", 8883)
-    client.subscribe(f"{STATUS_TOPIC}/#", qos=1)
-    client.subscribe(f"{BACKEND_TOPIC}/#", qos=1)
-    client.on_message = on_mqtt_message
-    client.loop_start()
+    mqtt_client.tls_set_context(ctx)
+    mqtt_client.connect("mqtt.hal9k.dk", 8883)
+    mqtt_client.loop_start()
     app.run(host='0.0.0.0', port=5000)
