@@ -177,6 +177,17 @@ def make_signed_payload(message):
     }
     return json.dumps(data)
 
+def mqtt_publish(device, payload):
+    topic = "hal9k/acs/action"
+    if device is not None:
+        topic += f"/{device}"
+    publish.single(topic,
+                   make_signed_payload(payload),
+                   hostname="mqtt.hal9k.dk",
+                   port=8883,
+                   auth={'username': MQTT_USER, 'password': MQTT_PASSWORD},
+                   tls={'tls_version': ssl.PROTOCOL_TLSv1_2, 'ca_certs': certifi.where()})
+
 # Validate user in /acsaction
 def is_acs_action_allowed(request):
     try:
@@ -362,6 +373,7 @@ def handle_acsaction(request):
         elif action in GLOBAL_ACTIONS:
             global global_allow_open
             global_allow_open = action == 'open'
+            mqtt_publish(None, action)
             return jsonify(
                 response_type='in_channel',
                 text=f'ACS open {"is" if global_allow_open else "not"} allowed')
@@ -381,15 +393,9 @@ def handle_acsaction(request):
         if len(tokens) > 2:
             global_acs_action_arg = ' '.join(tokens[2:])
         # MQTT
-        payload = action
         if global_acs_action_arg is not None:
             payload += f" {global_acs_action_arg}"
-        publish.single(f"hal9k/acs/action/{device}",
-                       make_signed_payload(payload),
-                       hostname="mqtt.hal9k.dk",
-                       port=8883,
-                       auth={'username': MQTT_USER, 'password': MQTT_PASSWORD},
-                       tls={'tls_version': ssl.PROTOCOL_TLSv1_2, 'ca_certs': certifi.where()})
+        mqtt_publish(device, action)
         return jsonify(
             response_type='in_channel',
             text=f"ACS action '{action}' queued for '{device}'")
