@@ -47,18 +47,16 @@ class AcsMqtt(paho.Client):
         if self.logger:
             self.logger.info(msg)
 
-    def slack_write(self, msg, channel='jeg-står-herude-og-banker-på', emoji=':panopticon:'):
-        c_channel = channel
-        c_emoji = emoji
+    def slack_write(self, msg, channel='jeg-står-herude-og-banker-på'):
         print(msg)
         if "|" in msg:
             parts = msg.split("|")
             msg = parts[0]
-            c_channel = parts[1]
+            channel = parts[1]
             if len(parts) > 2:
                 c_emoji = parts[2]
         try:
-            body = { 'channel': c_channel, 'icon_emoji': c_emoji, 'parse': 'full', 'text': msg }
+            body = { 'channel': channel, 'icon_emoji': ':panopticon:', 'parse': 'full', 'text': msg }
             headers = {
                     'content_type': 'application/json',
                     'Authorization': 'Bearer %s' % SLACK_WRITE_TOKEN
@@ -198,12 +196,19 @@ class AcsMqtt(paho.Client):
                         self.log_info(f"Invalid backend/slack request: {data}")
                         return
                     msg = data['text']
-                    channel = 'jeg-står-herude-og-banker-på'
-                    emoji = ':panopticon:'
+                    if msg.startswith(":"):
+                        # Add identifier after emoji
+                        parts = msg.split(":")
+                        emoji = f":{parts[1]}:"
+                        msg = f"{emoji} ({data['identifier']}) {':'.join(parts[2:])}"
+                    else:
+                        # Add identifier at start
+                        msg = f"({data['identifier']}) {msg}"
+                    channel='jeg-står-herude-og-banker-på'
                     if "|" in msg:
                         parts = msg.split("|")
-                        msg = f"({data['identifier']}) {parts[0]}|" + "|".join(parts[1:])
-                    self.slack_write(msg)
+                        channel = parts[1]
+                    self.slack_write(msg, channel)
                 else:
                     self.log_info(f"backend {action}?")
         except Exception as e:
@@ -226,5 +231,17 @@ if __name__ == '__main__':
             print("Wrong number of arguments to 'slack'")
             sys.exit(1)
         msg = args.args[0]
-        mqtt_client.slack_write(msg)
+        if msg.startswith(":"):
+            # Add identifier after emoji
+            parts = msg.split(":")
+            emoji = f":{parts[1]}:"
+            msg = f"{emoji} (tester) {':'.join(parts[2:])}"
+        else:
+            # Add identifier at start
+            msg = f"(tester) {msg}"
+        channel='jeg-står-herude-og-banker-på'
+        if "|" in msg:
+            parts = msg.split("|")
+            channel = parts[1]
+        mqtt_client.slack_write(msg, channel)
         time.sleep(5)
