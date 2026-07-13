@@ -11,10 +11,12 @@ import json
 import logging
 import os
 import paho.mqtt.client as paho
+import paho.mqtt.publish as publish
 from paho import mqtt
 import requests
 import ssl
 import struct
+import time
 
 
 # Contains log files written by acsmqttlogger
@@ -22,8 +24,8 @@ LOG_DIR='/opt/service/logs'
 # Mounted at /srv/acsgw/firmware
 FIRMWARE_DIR='/opt/service/persistent/firmware'
 
-DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'setdesc', 'setacstoken']
-GLOBAL_ACTIONS = ['open', 'close']
+DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'setdesc', 'setacstoken', 'dummy']
+GLOBAL_ACTIONS = ['open', 'close', 'dummy']
 CAMCTL_ACTIONS = ['on', 'off', 'reboot']
 
 STATUS_TOPIC = "hal9k/acs/status"
@@ -34,6 +36,10 @@ FRONTEND_DESC_MAP = {
     "woodshop": "the woodshop from the barn",
     "tester": "the backrooms",
 }
+
+MQTT_KEY = bytes.fromhex(os.environ['MQTT_KEY'])
+MQTT_USER = os.environ['MQTT_USER']
+MQTT_PASSWORD = os.environ['MQTT_PASSWORD']
 
 global_acs_device = None
 global_acs_action = None
@@ -121,7 +127,7 @@ def is_slack_request_valid(request):
 
 def verify_hash_with_timestamp(message: str, digest: bytes, timestamp: int) -> bool:
     hasher = hashlib.sha256()
-    hasher.update(bytes.fromhex(os.environ['MQTT_KEY']))
+    hasher.update(MQTT_KEY)
     hasher.update(struct.pack('<Q', timestamp))
     hasher.update(message.encode('utf-8'))
 
@@ -157,7 +163,20 @@ def is_backend_request_valid(data):
         return False
 
     return verify_hash_with_timestamp(text, bytes.fromhex(hash), stamp)
-    
+
+def make_signed_payload(message):
+    hasher = hashlib.sha256()
+    hasher.update(MQTT_KEY)
+    now = int(time.time())
+    hasher.update(struct.pack('>Q', now))
+    hasher.update(message.encode('utf-8'))
+    data = {
+        "text": message,
+        "stamp": now,
+        "hash": hasher.hexdigest(),
+    }
+    return json.dumps(data)
+
 # Validate user in /acsaction
 def is_acs_action_allowed(request):
     try:
@@ -352,6 +371,7 @@ def handle_acsaction(request):
     device = tokens[0]
     action = tokens[1]
     if action in DEVICE_ACTIONS:
+        # Legacy REST API
         global global_acs_device
         global_acs_device = device
         global global_acs_action
@@ -360,6 +380,16 @@ def handle_acsaction(request):
         global_acs_action_arg = None
         if len(tokens) > 2:
             global_acs_action_arg = ' '.join(tokens[2:])
+        # MQTT
+        payload = action
+        if global_acs_action_arg is not None:
+            payload += f" {global_acs_action_arg}"
+        publish.single(f"hal9k/acs/action/{device}",
+                       make_signed_payload(payload),
+                       hostname="mqtt.hal9k.dk",
+                       port=8883,
+                       auth={'username': MQTT_USER, 'password': MQTT_PASSWORD},
+                       tls={'tls_version': ssl.PROTOCOL_TLSv1_2, 'ca_certs': certifi.where()})
         return jsonify(
             response_type='in_channel',
             text=f"ACS action '{action}' queued for '{device}'")
