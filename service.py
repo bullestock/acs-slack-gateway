@@ -11,7 +11,9 @@ import json
 import logging
 import os
 import ssl
+import struct
 import sys
+import time
 import paho.mqtt.publish as publish
 from paho import mqtt
 
@@ -25,6 +27,10 @@ FIRMWARE_DIR='/opt/service/persistent/firmware'
 DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'setdesc', 'setacstoken', 'dummy']
 GLOBAL_ACTIONS = ['open', 'close', 'dummy']
 CAMCTL_ACTIONS = ['on', 'off', 'reboot']
+
+MQTT_KEY = bytes.fromhex(os.environ['MQTT_KEY'])
+MQTT_USER = os.environ['MQTT_USER']
+MQTT_PASSWORD = os.environ['MQTT_PASSWORD']
 
 global_acs_device = None
 global_acs_action = None
@@ -101,6 +107,19 @@ def is_slack_request_valid(request):
     except Exception as e:
         logger.info('Exception validating Slack request: %s' % e)
         return False    
+
+def make_signed_payload(message):
+    hasher = hashlib.sha256()
+    hasher.update(MQTT_KEY)
+    now = int(time.time())
+    hasher.update(struct.pack('>Q', now))
+    hasher.update(message.encode('utf-8'))
+    data = {
+        "text": message,
+        "stamp": now,
+        "hash": hasher.hexdigest(),
+    }
+    return json.dumps(data)
 
 def mqtt_publish(device, payload):
     topic = "hal9k/acs/action"
@@ -405,10 +424,9 @@ def handle_lastlog(request):
             return jsonify(
                 response_type='in_channel',
                 text='Invalid number of lines')
+    # Find the newest versioned file "acs.yyyy-mm-dd_HH"
     pattern = '%s/acs.*' % LOG_DIR
-    logger.info('pattern: %s' % pattern)
     files = list(filter(os.path.isfile, glob.glob(pattern)))
-    logger.info('files: %s' % files)
     if len(files) == 0:
         return jsonify(
             response_type='in_channel',
@@ -418,6 +436,9 @@ def handle_lastlog(request):
     logger.info('lastfile: %s' % lastfile)
     file = open(lastfile, "r")
     all_lines = list(file.readlines())
+    # Now add the current file "acs"
+    file = open('%s/acs' % LOG_DIR, "r")
+    all_lines += list(file.readlines())
     lst = []
     for line in all_lines:
         parts = line.split("|")

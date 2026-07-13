@@ -34,19 +34,6 @@ def verify_hash_with_timestamp(message: str, digest: bytes, timestamp: int) -> b
 
     return hasher.digest() == digest
 
-def make_signed_payload(message):
-    hasher = hashlib.sha256()
-    hasher.update(MQTT_KEY)
-    now = int(time.time())
-    hasher.update(struct.pack('>Q', now))
-    hasher.update(message.encode('utf-8'))
-    data = {
-        "text": message,
-        "stamp": now,
-        "hash": hasher.hexdigest(),
-    }
-    return json.dumps(data)
-
 
 class AcsMqtt(paho.Client):
     def __init__(self, logger, userdata):
