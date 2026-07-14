@@ -47,10 +47,16 @@ class SyncWatcher:
         """Publish the current sync status to MQTT."""
         try:
             file_timestamp = self.get_file_timestamp()
+            # Convert file modification time (seconds since epoch) to ISO format if available
+            if file_timestamp is not None:
+                timestamp_iso = datetime.fromtimestamp(file_timestamp).isoformat()
+            else:
+                timestamp_iso = None
+
             current_time = datetime.now().isoformat()
             
             message = {
-                "timestamp": file_timestamp,
+                "timestamp": timestamp_iso,
                 "last_check": current_time
             }
             
