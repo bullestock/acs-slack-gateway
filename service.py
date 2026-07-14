@@ -18,11 +18,13 @@ import paho.mqtt.publish as publish
 from paho import mqtt
 
 from mqtt import AcsMqtt
+from syncwatcher import SyncWatcher
 
 # Contains log files written by acsmqttlogger
 LOG_DIR='/opt/service/logs'
 # Mounted at /srv/acsgw/firmware
 FIRMWARE_DIR='/opt/service/persistent/firmware'
+ACS_SYNC_STATUS_FILE="/opt/service/monitoring/acs-sync-status"
 
 DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'setdesc', 'setacstoken', 'dummy']
 GLOBAL_ACTIONS = ['open', 'close', 'dummy']
@@ -593,9 +595,14 @@ def spaceapi():
 # Start the server on port 5000
 if __name__ == '__main__':
     WSGIRequestHandler.protocol_version = "HTTP/1.1"
+    # Create MQTT client
     mqtt_client = AcsMqtt(logger, userdata=app)
     ctx = ssl.create_default_context(cafile=certifi.where())
     mqtt_client.tls_set_context(ctx)
     mqtt_client.connect("mqtt.hal9k.dk", 8883)
     mqtt_client.loop_start()
+    # Check ACS_SYNC_STATUS_FILE every 60 seconds
+    watcher = SyncWatcher(ACS_SYNC_STATUS_FILE, MQTT_USER, MQTT_PASSWORD, 60, logger)
+    watcher.start()
+    # Start HTTP server
     app.run(host='0.0.0.0', port=5000)

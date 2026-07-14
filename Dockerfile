@@ -3,8 +3,9 @@ FROM ghcr.io/astral-sh/uv:debian-slim
 ARG GIT_COMMIT=unknown
 LABEL git-commit=$GIT_COMMIT
 
-COPY ./service.py /opt/service/
 COPY ./mqtt.py /opt/service/
+COPY ./service.py /opt/service/
+COPY ./syncwatcher.py /opt/service/
 COPY ./pyproject.toml /opt/service/
 WORKDIR /opt/service
 
