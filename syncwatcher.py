@@ -3,7 +3,7 @@ import logging
 import os
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 import paho.mqtt.publish as publish
 import certifi
@@ -49,11 +49,11 @@ class SyncWatcher:
             file_timestamp = self.get_file_timestamp()
             # Convert file modification time (seconds since epoch) to ISO format if available
             if file_timestamp is not None:
-                timestamp_iso = datetime.fromtimestamp(file_timestamp).isoformat()
+                timestamp_iso = datetime.fromtimestamp(file_timestamp, tz=timezone.utc).isoformat()
             else:
                 timestamp_iso = None
 
-            current_time = datetime.now().isoformat()
+            current_time = datetime.now(timezone.utc).isoformat()
             
             message = {
                 "timestamp": timestamp_iso,
