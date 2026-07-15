@@ -65,7 +65,8 @@ class SyncWatcher:
                            hostname="mqtt.hal9k.dk",
                            port=8883,
                            auth={'username': self.mqtt_user, 'password': self.mqtt_password},
-                           tls={'tls_version': ssl.PROTOCOL_TLSv1_2, 'ca_certs': certifi.where()})
+                           tls={'tls_version': ssl.PROTOCOL_TLSv1_2, 'ca_certs': certifi.where()},
+                           retain=True)
             self.log_info(f"Published sync status: {payload}")
         except Exception as e:
             self.log_info(f"Error publishing status: {e}")
