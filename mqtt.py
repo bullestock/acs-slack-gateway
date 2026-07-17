@@ -139,6 +139,16 @@ class AcsMqtt(paho.Client):
 
     def on_message(self, client, userdata, message):
         try:
+            if message.topic.startswith(STATUS_TOPIC):
+                topic = message.topic[len(STATUS_TOPIC)+1:]
+                topic_parts = topic.split("/")
+                if len(topic_parts) != 1:
+                    self.log_info(f"Invalid MQTT topic: {message.topic}")
+                    return
+                device = topic_parts[0]
+                if device == "space":
+                    self.log_info(f"Space status: {data}")
+                    return
             try:
                 data = message.payload.decode("utf-8")
                 data = json.loads(data)
@@ -148,12 +158,6 @@ class AcsMqtt(paho.Client):
                 return
             if message.topic.startswith(STATUS_TOPIC):
                 # "hal9k/acs/status/main <json>" -> "main <json>"
-                topic = message.topic[len(STATUS_TOPIC)+1:]
-                topic_parts = topic.split("/")
-                if len(topic_parts) != 1:
-                    self.log_info(f"Invalid MQTT topic: {message.topic}")
-                    return
-                device = topic_parts[0]
                 userdata.status[device] = data
                 self.log_info(f"Updated MQTT status for {device}")
             elif message.topic.startswith(BACKEND_TOPIC):
