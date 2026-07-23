@@ -149,9 +149,10 @@ class AcsMqtt(paho.Client):
                     return
                 device = topic_parts[0]
                 if device == "space":
-                    self.log_info(f"Space status: {data}")
+                    self.log_info(f"Space status: {message.payload}")
                     return
             try:
+                data = None
                 data = message.payload.decode("utf-8")
                 data = json.loads(data)
             except:
