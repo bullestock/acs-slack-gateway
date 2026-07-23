@@ -54,13 +54,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 app.status = {}
 
 logger = logging.getLogger('werkzeug')
-# Ensure log directory exists and use a rotating file handler limited to 500 MB
-try:
-    os.makedirs(LOG_DIR, exist_ok=True)
-except Exception:
-    pass
-log_file = os.path.join(LOG_DIR, 'acsgw.log')
-handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=500*1024*1024, backupCount=5)
+handler = logging.handlers.RotatingFileHandler('acsgw.log', maxBytes=500*1024*1024, backupCount=5)
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(message)s')
 handler.setFormatter(formatter)
 handler.setLevel(logging.INFO)
