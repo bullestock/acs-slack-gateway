@@ -81,12 +81,12 @@ class AcsMqtt(paho.Client):
         except Exception as e:
             self.log_info(f"log_unknown_card exception: {e}")
 
-    def on_connect(self, client, userdata, flags, rc, props):
+    def on_connect(self, client, userdata, flags, rc, props=None):
         self.log_info("MQTT connected")
         client.subscribe(f"{STATUS_TOPIC}/#", qos=1)
         client.subscribe(f"{BACKEND_TOPIC}/#", qos=1)
 
-    def on_disconnect(self, client, userdata, rc):
+    def on_disconnect(self, client, userdata, flags, rc, props=None):
         self.log_info("MQTT disconnected")
         while True:
             # loop until client.reconnect()
