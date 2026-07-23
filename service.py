@@ -9,6 +9,7 @@ import hashlib
 import hmac
 import json
 import logging
+from logging import handlers
 import os
 import ssl
 import struct
@@ -192,7 +193,7 @@ def is_camctl_request_valid(request):
         acs_auth = 'Bearer %s' % os.environ['ACS_VERIFICATION_TOKEN']
         is_token_valid = (auth == cam_auth) or (auth == acs_auth)
         if not is_token_valid:
-            logger.info('Bad camctl token: %s' % auth)
+            logger.info('Bad camctl token: %s' % str(auth))
     except Exception as e:
         logger.info('Exception: %s' % e)
         return False
