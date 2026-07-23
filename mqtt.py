@@ -42,19 +42,20 @@ class AcsMqtt(paho.Client):
     def __init__(self, logger, userdata):
         super().__init__(client_id="", userdata=userdata, protocol=paho.MQTTv5)
         self.logger = logger
+        self.log_info("AcsMqtt init")
 
     def log_info(self, msg):
         if self.logger:
             self.logger.info(msg)
 
     def slack_write(self, msg, channel='jeg-står-herude-og-banker-på'):
-        print(msg)
         if "|" in msg:
             parts = msg.split("|")
             msg = parts[0]
             channel = parts[1]
             if len(parts) > 2:
                 c_emoji = parts[2]
+        self.log_info(f"slack_write: #{channel}: {msg}")
         try:
             body = { 'channel': channel, 'icon_emoji': ':panopticon:', 'parse': 'full', 'text': msg }
             headers = {
@@ -62,6 +63,7 @@ class AcsMqtt(paho.Client):
                     'Authorization': 'Bearer %s' % SLACK_WRITE_TOKEN
                 }
             r = requests.post(url = 'https://slack.com/api/chat.postMessage', data = body, headers = headers)
+            self.log_info(f"slack_write: {r}")
         except Exception as e:
             self.log_info(f"Slack exception: {e}")
 
