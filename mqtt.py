@@ -149,7 +149,8 @@ class AcsMqtt(paho.Client):
                     return
                 device = topic_parts[0]
                 if device == "space":
-                    self.log_info(f"Space status: {message.payload}")
+                    space_status = message.payload.decode()
+                    self.log_info(f"Space status: {space_status}")
                     return
             try:
                 data = None
