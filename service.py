@@ -35,9 +35,6 @@ MQTT_KEY = bytes.fromhex(os.environ['MQTT_KEY'])
 MQTT_USER = os.environ['MQTT_USER']
 MQTT_PASSWORD = os.environ['MQTT_PASSWORD']
 
-global_acs_device = None
-global_acs_action = None
-global_acs_action_arg = None
 global_allow_open = None
 global_camera_action = {}
 global_camctl_action = {}
@@ -127,6 +124,7 @@ def make_signed_payload(message):
         "stamp": now,
         "hash": hasher.hexdigest(),
     }
+    logger.info(f"Signed payload: {data}")
     return json.dumps(data)
 
 def mqtt_publish(device, payload):
@@ -335,18 +333,12 @@ def handle_acsaction(request):
     device = tokens[0]
     action = tokens[1]
     if action in DEVICE_ACTIONS:
-        # Legacy REST API
-        global global_acs_device
-        global_acs_device = device
-        global global_acs_action
-        global_acs_action = action
-        global global_acs_action_arg
-        global_acs_action_arg = None
+        action_arg = None
         if len(tokens) > 2:
-            global_acs_action_arg = ' '.join(tokens[2:])
+            action_arg = ' '.join(tokens[2:])
         # MQTT
-        if global_acs_action_arg is not None:
-            payload += f" {global_acs_action_arg}"
+        if action_arg is not None:
+            payload += f" {action_arg}"
         mqtt_publish(device, action)
         return jsonify(
             response_type='in_channel',
@@ -477,31 +469,6 @@ def command(command):
     if command == 'lastlog' or command == 'acslastlog':
         return handle_lastlog(request)
     return 'Unknown command', 200
-
-# /acsquery: Called by ACS to see if an action is pending
-@app.route('/acsquery', methods=['POST'])
-def query():
-    if not is_acs_request_valid(request):
-        logger.info('Invalid request. Aborting')
-        return abort(403)
-    if not 'device' in request.json:
-        logger.info('Ignoring /acsquery with no device')
-        return abort(403)
-    global global_acs_action
-    global global_acs_action_arg
-    global global_acs_device
-    global global_allow_open
-    if request.json['device'] == global_acs_device:
-        device = global_acs_device
-        action = global_acs_action
-        arg = global_acs_action_arg
-        logger.info(f'acsquery: device {device} action {action}')
-        global_acs_action = None
-        global_acs_device = None
-        global_acs_action_arg = None
-        return jsonify(action=action, arg=arg)
-    logger.info('Ignoring /acsquery from other device')
-    return jsonify(action=None, allow_open=global_allow_open)
 
 # /acscamctl: Called by ACS to control camera power
 @app.route('/acscamctl', methods=['POST'])
