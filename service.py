@@ -35,7 +35,6 @@ MQTT_KEY = bytes.fromhex(os.environ['MQTT_KEY'])
 MQTT_USER = os.environ['MQTT_USER']
 MQTT_PASSWORD = os.environ['MQTT_PASSWORD']
 
-global_allow_open = None
 global_camera_action = {}
 global_camctl_action = {}
 global_acs_camaction = None
@@ -321,25 +320,23 @@ def handle_acsaction(request):
                 response_type='in_channel',
                 text='Missing device')
         elif action in GLOBAL_ACTIONS:
-            global global_allow_open
-            global_allow_open = action == 'open'
             mqtt_publish(None, action)
             return jsonify(
                 response_type='in_channel',
-                text=f'ACS open {"is" if global_allow_open else "not"} allowed')
+                text=f'ACS open {"is" if action == 'open' else "not"} allowed')
         return jsonify(
             response_type='in_channel',
             text=f"ACS action '{action}' not supported")
     device = tokens[0]
     action = tokens[1]
     if action in DEVICE_ACTIONS:
+        payload = action
         action_arg = None
         if len(tokens) > 2:
             action_arg = ' '.join(tokens[2:])
-        # MQTT
         if action_arg is not None:
             payload += f" {action_arg}"
-        mqtt_publish(device, action)
+        mqtt_publish(device, payload)
         return jsonify(
             response_type='in_channel',
             text=f"ACS action '{action}' queued for '{device}'")
