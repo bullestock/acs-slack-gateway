@@ -40,14 +40,13 @@ global_camctl_action = {}
 global_acs_camaction = None
 global_camctl_status = None
 global_last_cameras_on = None
-global_space_open = False
-global_space_open_lastchange = 0 # UNIX timestamp
-
 
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.status = {}
+app.is_space_open = False
+app.space_open_lastchange = 0 # UNIX timestamp
 
 logger = logging.getLogger('werkzeug')
 handler = logging.handlers.RotatingFileHandler('acsgw.log', maxBytes=500*1024*1024, backupCount=5)
@@ -536,8 +535,8 @@ def spaceapi():
             "email": "bestyrelse@hal9k.dk"
         },
         "state": {
-            "open": global_space_open,
-            "lastchange": global_space_open_lastchange
+            "open": app.is_space_open,
+            "lastchange": app.space_open_lastchange
         },
         "projects": [
             "https://wiki.hal9k.dk"

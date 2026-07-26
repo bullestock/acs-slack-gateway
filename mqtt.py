@@ -43,6 +43,7 @@ class AcsMqtt(paho.Client):
         super().__init__(client_id="", userdata=userdata, protocol=paho.MQTTv5)
         self.logger = logger
         self.log_info("AcsMqtt init")
+        self.app = userdata
 
     def log_info(self, msg):
         if self.logger:
@@ -141,6 +142,7 @@ class AcsMqtt(paho.Client):
 
     def on_message(self, client, userdata, message):
         try:
+            device = None
             if message.topic.startswith(STATUS_TOPIC):
                 topic = message.topic[len(STATUS_TOPIC)+1:]
                 topic_parts = topic.split("/")
@@ -148,10 +150,7 @@ class AcsMqtt(paho.Client):
                     self.log_info(f"Invalid MQTT topic: {message.topic}")
                     return
                 device = topic_parts[0]
-                if device == "space":
-                    space_status = message.payload.decode()
-                    self.log_info(f"Space status: {space_status}")
-                    return
+                self.log_info(f"MQTT status device: {device}")
             try:
                 data = None
                 data = message.payload.decode("utf-8")
@@ -161,7 +160,13 @@ class AcsMqtt(paho.Client):
                 self.log_info(f"Invalid MQTT data: {data}")
                 return
             if message.topic.startswith(STATUS_TOPIC):
-                # "hal9k/acs/status/main <json>" -> "main <json>"
+                if device == "space":
+                    is_space_open = data["status"] == "open"
+                    if is_space_open != self.app.is_space_open:
+                        self.app.is_space_open = is_space_open
+                        self.app.space_open_lastchange = int(time.time())
+                        self.log_info(f"Space open: {self.app.is_space_open}")
+                    return
                 userdata.status[device] = data
                 self.log_info(f"Updated MQTT status for {device}")
             elif message.topic.startswith(BACKEND_TOPIC):
