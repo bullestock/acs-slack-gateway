@@ -56,8 +56,8 @@ class SyncWatcher:
             current_time = datetime.now(timezone.utc).isoformat()
             
             message = {
-                "timestamp": timestamp_iso,
-                "last_check": current_time
+                "timestamp": current_time,
+                "last_sync": timestamp_iso,
             }
             
             payload = json.dumps(message)
