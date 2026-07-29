@@ -91,23 +91,27 @@ class AcsMqtt(paho.Client):
 
     def on_disconnect(self, client, userdata, flags, rc, props=None):
         self.log_info("MQTT disconnected")
+        backoff = 1
+        # Keep trying to reconnect; log and swallow all exceptions so the
+        # mqtt loop thread doesn't crash on transient SSL/connection errors.
         while True:
-            # loop until client.reconnect()
-            # returns 0, which means the
-            # client is connected
             try:
-                if not client.reconnect():
+                rc = client.reconnect()
+                # paho reconnect returns 0 on success
+                if rc == 0:
+                    self.log_info("MQTT reconnected")
                     break
+                else:
+                    self.log_info(f"MQTT reconnect returned rc={rc}")
             except ConnectionRefusedError:
-                # if the server is not running,
-                # then the host rejects the connection
-                # and a ConnectionRefusedError is thrown
-                # getting this error > continue trying to
-                # connect
-                pass
-            # if the reconnect was not successful,
-            # wait one second
-            time.sleep(1)
+                # Server actively refused connection; retry
+                self.log_info("MQTT reconnect: ConnectionRefusedError")
+            except Exception as e:
+                # Catch SSL, ConnectionResetError and other errors
+                self.log_info(f"MQTT reconnect exception: {e}")
+            # Wait with exponential backoff (cap at 30s)
+            time.sleep(backoff)
+            backoff = min(30, backoff * 2)
 
     def is_backend_request_valid(self, data):
         """
