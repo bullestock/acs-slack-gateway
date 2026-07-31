@@ -68,12 +68,12 @@ class AcsMqtt(paho.Client):
         except Exception as e:
             self.log_info(f"Slack exception: {e}")
 
-    def log_backend(self, user_id, message):
+    def log_backend(self, user_id, machine, message):
         try:
-            body = { "api_token": ACS_DOOR_TOKEN, "log": { "message": message } }
+            body = { "api_token": ACS_DOOR_TOKEN, "log": { "message": message, "machine": machine } }
             if user_id is not None:
                 body["log"]["user_id"] = user_id
-            r = requests.post(url = 'https://panopticon.hal9k.dk/api/v1/logs', json = body)
+            r = requests.post(url = 'https://panopticon.hal9k.dk/api/v1/logs/delegate', json = body)
         except Exception as e:
             self.log_info(f"log_backend exception: {e}")
 
@@ -197,7 +197,7 @@ class AcsMqtt(paho.Client):
                                 self.slack_write(f":unlock: A hacker just entered the unknowns:interrobang:")
                         self.log_info(f"backend log: wrote to Slack")
                         # Log to backend
-                        self.log_backend(data["user_id"], data["text"])
+                        self.log_backend(data["user_id"], device, data["text"])
                     except Exception as e:
                         self.log_info(f"Exception: {e}")
                 elif action == "unknown_card":
