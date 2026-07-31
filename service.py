@@ -11,6 +11,7 @@ import json
 import logging
 from logging import handlers
 import os
+import pytz
 import ssl
 import struct
 import sys
@@ -228,7 +229,7 @@ def format_lines(device, lines):
 # Return camera status set via MQTT
 def get_camera_status_dict():
     cam_status = {}
-    cutoff_time = datetime.datetime.now() - datetime.timedelta(days=3)
+    cutoff_time = pytz.UTC.localize(datetime.datetime.now() - datetime.timedelta(days=3))
     for device in app.status:
         if not device.startswith("cam"):
             continue
