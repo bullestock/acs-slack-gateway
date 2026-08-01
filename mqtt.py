@@ -74,6 +74,7 @@ class AcsMqtt(paho.Client):
             if user_id is not None:
                 body["log"]["user_id"] = user_id
             r = requests.post(url = 'https://panopticon.hal9k.dk/api/v1/logs/delegate', json = body)
+            self.log_info(f"log_backend: {r}")
         except Exception as e:
             self.log_info(f"log_backend exception: {e}")
 
