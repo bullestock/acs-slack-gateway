@@ -116,7 +116,7 @@ def make_signed_payload(message):
     hasher = hashlib.sha256()
     hasher.update(MQTT_KEY)
     now = int(time.time())
-    hasher.update(struct.pack('>Q', now))
+    hasher.update(struct.pack('<Q', now))
     hasher.update(message.encode('utf-8'))
     data = {
         "text": message,
