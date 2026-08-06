@@ -28,7 +28,7 @@ LOG_DIR='/opt/service/logs'
 FIRMWARE_DIR='/opt/service/persistent/firmware'
 ACS_SYNC_STATUS_FILE="/opt/service/monitoring/acs-sync-status"
 
-DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'setdesc', 'setacstoken', 'dummy']
+DEVICE_ACTIONS = ['lock', 'unlock', 'reboot', 'dummy']
 GLOBAL_ACTIONS = ['open', 'close', 'dummy']
 CAMCTL_ACTIONS = ['on', 'off', 'reboot']
 
