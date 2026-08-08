@@ -200,7 +200,6 @@ def get_acs_status():
         if not "data" in dev_status:
             # Not ACS frontend
             continue
-        status += f"*{device.capitalize()}*:\n"
         ts = dev_status["timestamp"]
         # Parse ISO8601 timestamp and skip if older than 3 days
         try:
@@ -211,6 +210,7 @@ def get_acs_status():
             # Skip entries with invalid timestamps
             logger.warning(f"Invalid timestamp for {device}: {ts} - {e}")
             continue
+        status += f"*{device.capitalize()}*:\n"
         status += f"    Last update: _{ts}_\n"
         data = dev_status["data"]
         for key in data:
