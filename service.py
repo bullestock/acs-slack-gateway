@@ -194,6 +194,7 @@ def is_camctl_request_valid(request):
 # Return ACS status set via MQTT
 def get_acs_status():
     status = ""
+    cutoff_time = pytz.UTC.localize(datetime.datetime.now() - datetime.timedelta(days=3))
     for device in app.status:
         dev_status = app.status[device]
         if not "data" in dev_status:
@@ -201,6 +202,15 @@ def get_acs_status():
             continue
         status += f"*{device.capitalize()}*:\n"
         ts = dev_status["timestamp"]
+        # Parse ISO8601 timestamp and skip if older than 3 days
+        try:
+            ts_datetime = datetime.datetime.fromisoformat(ts)
+            if ts_datetime < cutoff_time:
+                continue
+        except (ValueError, TypeError) as e:
+            # Skip entries with invalid timestamps
+            logger.warning(f"Invalid timestamp for {device}: {ts} - {e}")
+            continue
         status += f"    Last update: _{ts}_\n"
         data = dev_status["data"]
         for key in data:
