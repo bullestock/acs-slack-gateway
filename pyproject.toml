@@ -11,4 +11,5 @@ dependencies = [
     "paho-mqtt>=2.1.0",
     "requests>=2.34.2",
     "pytz",
+    "waitress>=3.0.2",
 ]

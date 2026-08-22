@@ -1,6 +1,6 @@
 from flask import Flask, request, abort, jsonify, send_file
 from flask_cors import CORS, cross_origin
-from werkzeug.serving import WSGIRequestHandler
+from waitress import serve
 
 import certifi
 import datetime
@@ -574,7 +574,6 @@ def spaceapi():
 
 # Start the server on port 5000
 if __name__ == '__main__':
-    WSGIRequestHandler.protocol_version = "HTTP/1.1"
     # Create MQTT client
     mqtt_client = AcsMqtt(logger, userdata=app)
     ctx = ssl.create_default_context(cafile=certifi.where())
@@ -585,4 +584,4 @@ if __name__ == '__main__':
     watcher = SyncWatcher(ACS_SYNC_STATUS_FILE, MQTT_USER, MQTT_PASSWORD, 60, logger)
     watcher.start()
     # Start HTTP server
-    app.run(host='0.0.0.0', port=5000)
+    serve(app, host='0.0.0.0', port=5000)
