@@ -4,6 +4,7 @@ import datetime
 import hashlib
 import json
 import os
+import random
 import requests
 import ssl
 import struct
@@ -202,10 +203,11 @@ class AcsMqtt(paho.Client):
                         self.log_info(f"backend log: request is valid")
                         device = data["identifier"]
                         if "Granted entry" in data["text"]:
+                            who = random.choice(("A hacker", "Somebody", "A human", "Someone from Hal9k", ))
                             if device in FRONTEND_DESC_MAP:
-                                self.slack_write(f":unlock: A hacker just entered {FRONTEND_DESC_MAP[device]}")
+                                self.slack_write(f":unlock: {who} just entered {FRONTEND_DESC_MAP[device]}")
                             else:
-                                self.slack_write(f":unlock: A hacker just entered the unknowns:interrobang:")
+                                self.slack_write(f":unlock: {who} just entered the unknowns:interrobang:")
                         self.log_info(f"backend log: wrote to Slack")
                         # Log to backend
                         if device in FRONTEND_DESC_MAP:
