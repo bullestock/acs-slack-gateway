@@ -204,10 +204,12 @@ class AcsMqtt(paho.Client):
                         device = data["identifier"]
                         if "Granted entry" in data["text"]:
                             who = random.choice(("A hacker", "Somebody", "A human", "Someone from Hal9k", ))
+                            how = random.choice(("entered", "went into", "crept into", "barged into",
+                                                 "made an entrance into", "popped into", ))
                             if device in FRONTEND_DESC_MAP:
-                                self.slack_write(f":unlock: {who} just entered {FRONTEND_DESC_MAP[device]}")
+                                self.slack_write(f":unlock: {who} just {how} {FRONTEND_DESC_MAP[device]}")
                             else:
-                                self.slack_write(f":unlock: {who} just entered the unknowns:interrobang:")
+                                self.slack_write(f":unlock: {who} just {how} the unknowns:interrobang:")
                         self.log_info(f"backend log: wrote to Slack")
                         # Log to backend
                         if device in FRONTEND_DESC_MAP:
