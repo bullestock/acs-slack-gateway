@@ -38,6 +38,7 @@ def verify_hash_with_timestamp(message: str, digest: bytes, timestamp: int) -> b
 
     return hasher.digest() == digest
 
+DEFAULT_CHANNEL = 'monitoring'
 
 class AcsMqtt(paho.Client):
     def __init__(self, logger, userdata):
@@ -50,7 +51,7 @@ class AcsMqtt(paho.Client):
         if self.logger:
             self.logger.info(msg)
 
-    def slack_write(self, msg, channel='jeg-står-herude-og-banker-på'):
+    def slack_write(self, msg, channel=DEFAULT_CHANNEL):
         if "|" in msg:
             parts = msg.split("|")
             msg = parts[0]
@@ -238,7 +239,7 @@ class AcsMqtt(paho.Client):
                     else:
                         # Add identifier at start
                         msg = f"({data['identifier']}) {msg}"
-                    channel='jeg-står-herude-og-banker-på'
+                    channel=DEFAULT_CHANNEL
                     if "|" in msg:
                         parts = msg.split("|")
                         channel = parts[1]
@@ -273,7 +274,7 @@ if __name__ == '__main__':
         else:
             # Add identifier at start
             msg = f"(tester) {msg}"
-        channel='jeg-står-herude-og-banker-på'
+        channel=DEFAULT_CHANNEL
         if "|" in msg:
             parts = msg.split("|")
             channel = parts[1]
