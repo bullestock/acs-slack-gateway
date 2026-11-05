@@ -1,6 +1,6 @@
 from flask import Flask, request, abort, jsonify, send_file
 from flask_cors import CORS, cross_origin
-from werkzeug.serving import WSGIRequestHandler
+from waitress import serve
 
 import certifi
 import datetime
@@ -194,13 +194,23 @@ def is_camctl_request_valid(request):
 # Return ACS status set via MQTT
 def get_acs_status():
     status = ""
+    cutoff_time = pytz.UTC.localize(datetime.datetime.now() - datetime.timedelta(days=3))
     for device in app.status:
         dev_status = app.status[device]
         if not "data" in dev_status:
             # Not ACS frontend
             continue
-        status += f"*{device.capitalize()}*:\n"
         ts = dev_status["timestamp"]
+        # Parse ISO8601 timestamp and skip if older than 3 days
+        try:
+            ts_datetime = datetime.datetime.fromisoformat(ts)
+            if ts_datetime < cutoff_time:
+                continue
+        except (ValueError, TypeError) as e:
+            # Skip entries with invalid timestamps
+            logger.warning(f"Invalid timestamp for {device}: {ts} - {e}")
+            continue
+        status += f"*{device.capitalize()}*:\n"
         status += f"    Last update: _{ts}_\n"
         data = dev_status["data"]
         for key in data:
@@ -564,7 +574,6 @@ def spaceapi():
 
 # Start the server on port 5000
 if __name__ == '__main__':
-    WSGIRequestHandler.protocol_version = "HTTP/1.1"
     # Create MQTT client
     mqtt_client = AcsMqtt(logger, userdata=app)
     ctx = ssl.create_default_context(cafile=certifi.where())
@@ -575,4 +584,4 @@ if __name__ == '__main__':
     watcher = SyncWatcher(ACS_SYNC_STATUS_FILE, MQTT_USER, MQTT_PASSWORD, 60, logger)
     watcher.start()
     # Start HTTP server
-    app.run(host='0.0.0.0', port=5000)
+    serve(app, host='0.0.0.0', port=5000)
